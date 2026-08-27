@@ -28,15 +28,17 @@ export class EnvironmentSettings {
   private skyMesh: THREE.Mesh | null = null;
   private skyUniforms: any = null;
 
+  public axisLinesGroup: THREE.Group;
+
   constructor(config?: Partial<EnvironmentConfig>) {
     this.config = {
-      bgColor: '#d4ddd6',
+      bgColor: '#f5f4f0',
       showGroundGrid: true,
       showAxes: false,
-      gridSize: 10,
-      gridDivisions: 20,
-      gridColorCenter: '#968060',
-      gridColorGrid: '#c4bedb',
+      gridSize: 12,
+      gridDivisions: 24,
+      gridColorCenter: '#555555',
+      gridColorGrid: '#999999',
       ambientIntensity: 0.8,
       directionalIntensity: 1.2,
       sunPosition: new THREE.Vector3(5, 10, 7),
@@ -47,16 +49,34 @@ export class EnvironmentSettings {
     this.environmentGroup = new THREE.Group();
     this.environmentGroup.name = 'Environment';
 
-    // Ground Grid
+    // High-Contrast Ground Grid
     this.groundGrid = new THREE.GridHelper(
       this.config.gridSize,
       this.config.gridDivisions,
       new THREE.Color(this.config.gridColorCenter),
       new THREE.Color(this.config.gridColorGrid)
     );
+    (this.groundGrid.material as THREE.Material).opacity = 0.65;
+    (this.groundGrid.material as THREE.Material).transparent = true;
     this.groundGrid.position.y = 0;
     this.groundGrid.visible = this.config.showGroundGrid;
     this.environmentGroup.add(this.groundGrid);
+
+    // Colored 3D Center Axes (X=Red, Y=Green, Z=Blue)
+    this.axisLinesGroup = new THREE.Group();
+    const axisLength = 6;
+    const axisConfigs: Array<[THREE.Vector3, string]> = [
+      [new THREE.Vector3(axisLength, 0, 0), '#e03040'],
+      [new THREE.Vector3(0, axisLength, 0), '#22bb55'],
+      [new THREE.Vector3(0, 0, axisLength), '#3377ee']
+    ];
+    axisConfigs.forEach(([tip, col]) => {
+      const gPos = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), tip]);
+      this.axisLinesGroup.add(new THREE.Line(gPos, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.7 })));
+      const gNeg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), tip.clone().negate()]);
+      this.axisLinesGroup.add(new THREE.Line(gNeg, new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.25 })));
+    });
+    this.environmentGroup.add(this.axisLinesGroup);
 
     // Axes Helper
     this.axesHelper = new THREE.AxesHelper(1.5);

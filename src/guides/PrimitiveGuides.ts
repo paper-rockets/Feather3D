@@ -34,9 +34,9 @@ export class PrimitiveGuides {
 
     const wireGeo = new THREE.WireframeGeometry(geometry);
     const wireMat = new THREE.LineBasicMaterial({
-      color: 0x1e52a0,
+      color: 0x222222,
       transparent: true,
-      opacity: 0.35
+      opacity: 0.6
     });
     this.wireframe = new THREE.LineSegments(wireGeo, wireMat);
     this.group.add(this.wireframe);

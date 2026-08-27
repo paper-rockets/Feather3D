@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Feather3D - Control Panel Concept</title>
+  <meta name="theme-color" content="#1e1e24">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #18181c;
+      font-family: 'DM Mono', monospace;
+      color: #e0e0e6;
+    }
+
+    #webgl-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* Top banner / Info bar */
+    #top-bar {
+      position: fixed;
+      top: 14px;
+      left: 16px;
+      z-index: 10;
+      background: rgba(30, 30, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: #9c9ca8;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    #top-bar .tag {
+      color: #7dd3fc;
+      font-weight: 700;
+    }
+
+    /* Main Floating Control Panel */
+    #ctrl-panel {
+      position: fixed;
+      top: 60px;
+      right: 24px;
+      width: 410px;
+      z-index: 100;
+      background: rgba(32, 33, 39, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      padding: 10px 12px 12px;
+      touch-action: none;
+    }
+
+    /* Header Bar */
+    .ctrl-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+      margin-bottom: 8px;
+      cursor: grab;
+    }
+    .ctrl-header:active {
+      cursor: grabbing;
+    }
+    .ctrl-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #b0b0bc;
+      text-transform: uppercase;
+      padding-left: 2px;
+    }
+    .ctrl-drag-pill {
+      width: 44px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      margin-left: 8px;
+    }
+    .ctrl-header-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .btn-header {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9c9ca8;
+      border-radius: 6px;
+      height: 24px;
+      padding: 0 8px;
+      font-size: 10px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .btn-header:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-header.on {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Panel Body Grid (2 columns) */
+    .ctrl-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Sub-card Container */
+    .ctrl-subcard {
+      background: rgba(18, 19, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Button Rows */
+    .btn-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .btn-cell {
+      flex: 1;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #c4c4ce;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .btn-cell:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+    .btn-cell:active {
+      transform: scale(0.97);
+    }
+    .btn-cell.on {
+      background: rgba(80, 84, 102, 0.6);
+      border: 1px solid rgba(140, 145, 175, 0.5);
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    /* Joystick Area */
+    .joystick-container {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      background: rgba(14, 15, 18, 0.45);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #joy-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    /* 3D Gizmo Area */
+    .gizmo-container {
+      position: relative;
+      width: 100%;
+      height: 120px;
+      background: rgba(14, 15, 18, 0.45);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .gizmo-badge {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #888896;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      z-index: 2;
+    }
+    #gizmo-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    /* Gizmo Bottom Controls */
+    .gizmo-bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2px;
+      padding-top: 2px;
+    }
+    .btn-mini {
+      background: transparent;
+      border: none;
+      color: #8a8a98;
+      font-size: 10px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 4px 2px;
+      border-radius: 4px;
+      transition: color 0.12s, background 0.12s;
+    }
+    .btn-mini:hover {
+      color: #e0e0e8;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .btn-mini.on {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* Circular Angle Snap Dial Button */
+    .snap-dial {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #b0b0bc;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .snap-dial:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+      color: #ffffff;
+    }
+    .snap-dial.on {
+      border: 1.5px solid #7dd3fc;
+      color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.12);
+      font-weight: 700;
+    }
+
+    /* Restore / Reopen Button (if closed) */
+    #reopen-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 90;
+      background: rgba(32, 33, 39, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 10px 18px;
+      border-radius: 10px;
+      color: #e0e0e8;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    #reopen-btn:hover {
+      background: rgba(45, 46, 55, 0.96);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Toast notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(26, 26, 32, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #f0f0f5;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 200;
+    }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Top Info Badge -->
+  <div id="top-bar">
+    <span class="tag">Feather3D</span>
+    <span>Control Panel Concept Demo</span>
+    <span id="cam-status" style="color:#7dd3fc;margin-left:8px">PERSP (Orbital)</span>
+  </div>
+
+  <!-- Floating Control Panel -->
+  <div id="ctrl-panel">
+    <!-- Body (2 columns) -->
+    <div class="ctrl-body">
+      
+      <!-- Left Subcard: Navigation & Joystick -->
+      <div class="ctrl-subcard">
+        <div class="btn-row">
+          <button class="btn-cell on" id="btn-joy-mode" title="Toggle Orbit / Pan mode">JOY</button>
+          <button class="btn-cell" id="btn-ortho-toggle" title="Toggle Perspective / Orthographic">ORTHO</button>
+          <button class="btn-cell" id="btn-zoom-out" title="Zoom Out">-</button>
+          <button class="btn-cell" id="btn-zoom-in" title="Zoom In">+</button>
+        </div>
+
+        <div class="joystick-container" id="joy-container">
+          <canvas id="joy-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Right Subcard: 3D Orientation Gizmo & Views -->
+      <div class="ctrl-subcard">
+        <div class="btn-row">
+          <button class="btn-cell on" id="btn-view-sc" title="Scene Isometric View">Sc</button>
+          <button class="btn-cell" id="btn-view-front" title="Front Elevation View">Front</button>
+          <button class="btn-cell" id="btn-view-all" title="Frame All Objects">All</button>
+          <button class="btn-cell" id="btn-view-pln" title="Align to Drawing Plane">Pln</button>
+        </div>
+
+        <div class="gizmo-container" id="gizmo-container">
+          <span class="gizmo-badge" id="gizmo-mode-badge">WLD</span>
+          <canvas id="gizmo-canvas"></canvas>
+        </div>
+
+        <div class="gizmo-bottom-bar">
+          <button class="btn-mini" id="btn-rst" title="Reset View">RST</button>
+          <div class="snap-dial on" id="btn-snap-45" title="Toggle 45 Degree Angle Snap">45 deg</div>
+          <button class="btn-mini" id="btn-fce" title="Face Alignment">FCE</button>
+          <button class="btn-mini" id="btn-vw" title="View Lock">VW</button>
+          <button class="btn-mini" id="btn-lcl" title="Local Coordinates">LCL</button>
+          <button class="btn-mini on" id="btn-wld" title="World Coordinates">WLD</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    // Toast Utility
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(function() { t.classList.remove('show'); }, 1800);
+    }
+
+    // Three.js Scene Setup
+    var canvas = document.getElementById('webgl-canvas');
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x18181c, 1);
+
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x18181c);
+    scene.fog = new THREE.FogExp2(0x18181c, 0.02);
+
+    // Lights
+    var ambient = new THREE.AmbientLight(0xffffff, 0.85);
+    scene.add(ambient);
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(10, 15, 10);
+    scene.add(dirLight);
+
+    // Grid & Coordinate Guides
+    var gridGroup = new THREE.Group();
+    scene.add(gridGroup);
+
+    var gridHelper = new THREE.GridHelper(20, 20, 0x484856, 0x2e2f38);
+    gridHelper.position.y = -0.01;
+    gridGroup.add(gridHelper);
+
+    // Reference drawing plane with frosted glass finish
+    var planeGeo = new THREE.PlaneGeometry(8, 8, 1, 1);
+    var planeMat = new THREE.MeshBasicMaterial({
+      color: 0x2a2b34,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false
+    });
+    var planeMesh = new THREE.Mesh(planeGeo, planeMat);
+    planeMesh.rotation.x = -Math.PI / 2;
+    gridGroup.add(planeMesh);
+
+    var planeOutlineGeo = new THREE.EdgesGeometry(planeGeo);
+    var planeOutlineMat = new THREE.LineBasicMaterial({ color: 0x55586d, transparent: true, opacity: 0.8 });
+    var planeOutline = new THREE.LineSegments(planeOutlineGeo, planeOutlineMat);
+    planeMesh.add(planeOutline);
+
+    // Sample 3D sketch strokes & shapes
+    var strokeGroup = new THREE.Group();
+    scene.add(strokeGroup);
+
+    // Draw stylized 3D ribbon strokes in space
+    (function createSampleArt() {
+      // Stroke 1: Spiral ribbon
+      var curvePoints = [];
+      for (var i = 0; i <= 60; i++) {
+        var t = i / 60;
+        var angle = t * Math.PI * 4;
+        var r = 1.2 + t * 0.8;
+        var x = Math.cos(angle) * r;
+        var z = Math.sin(angle) * r;
+        var y = t * 2.5;
+        curvePoints.push(new THREE.Vector3(x, y, z));
+      }
+      var curve = new THREE.CatmullRomCurve3(curvePoints);
+      var tubeGeo = new THREE.TubeGeometry(curve, 64, 0.08, 12, false);
+      var tubeMat = new THREE.MeshStandardMaterial({
+        color: 0x7dd3fc,
+        roughness: 0.3,
+        metalness: 0.2
+      });
+      strokeGroup.add(new THREE.Mesh(tubeGeo, tubeMat));
+
+      // Stroke 2: Cyan arc
+      var arcPoints = [];
+      for (var j = 0; j <= 30; j++) {
+        var u = (j / 30) * Math.PI;
+        arcPoints.push(new THREE.Vector3(Math.cos(u) * 2.2, Math.sin(u) * 1.8 + 0.2, Math.sin(u) * 1.0));
+      }
+      var arcCurve = new THREE.CatmullRomCurve3(arcPoints);
+      var arcTube = new THREE.TubeGeometry(arcCurve, 32, 0.06, 10, false);
+      var arcMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.4 });
+      strokeGroup.add(new THREE.Mesh(arcTube, arcMat));
+
+      // Stroke 3: Golden reference ring
+      var torusGeo = new THREE.TorusGeometry(1.6, 0.04, 12, 48);
+      var torusMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.3 });
+      var torusMesh = new THREE.Mesh(torusGeo, torusMat);
+      torusMesh.rotation.x = Math.PI / 4;
+      torusMesh.position.set(0, 1.2, 0);
+      strokeGroup.add(torusMesh);
+    })();
+
+    // Camera & Projection System
+    var aspect = window.innerWidth / window.innerHeight;
+    var perspCam = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+    var orthoDist = 5;
+    var orthoCam = new THREE.OrthographicCamera(
+      -orthoDist * aspect, orthoDist * aspect,
+      orthoDist, -orthoDist,
+      0.1, 1000
+    );
+
+    var isOrtho = false;
+    var activeCamera = perspCam;
+
+    // Spherical camera navigation state
+    var camState = {
+      radius: 9,
+      theta: -Math.PI / 4,
+      phi: Math.PI / 3,
+      target: new THREE.Vector3(0, 1, 0),
+      targetRadius: 9,
+      targetTheta: -Math.PI / 4,
+      targetPhi: Math.PI / 3,
+      snap45: true
+    };
+
+    function updateCameraPosition() {
+      camState.radius += (camState.targetRadius - camState.radius) * 0.15;
+      camState.theta += (camState.targetTheta - camState.theta) * 0.15;
+      camState.phi += (camState.targetPhi - camState.phi) * 0.15;
+
+      camState.phi = Math.max(0.01, Math.min(Math.PI - 0.01, camState.phi));
+
+      var sinPhi = Math.sin(camState.phi);
+      var cosPhi = Math.cos(camState.phi);
+      var sinTheta = Math.sin(camState.theta);
+      var cosTheta = Math.cos(camState.theta);
+
+      var cx = camState.target.x + camState.radius * sinPhi * sinTheta;
+      var cy = camState.target.y + camState.radius * cosPhi;
+      var cz = camState.target.z + camState.radius * sinPhi * cosTheta;
+
+      perspCam.position.set(cx, cy, cz);
+      perspCam.lookAt(camState.target);
+
+      orthoCam.position.set(cx, cy, cz);
+      orthoCam.lookAt(camState.target);
+
+      var curAspect = window.innerWidth / window.innerHeight;
+      var oScale = (camState.radius / 9) * 4.5;
+      orthoCam.left = -oScale * curAspect;
+      orthoCam.right = oScale * curAspect;
+      orthoCam.top = oScale;
+      orthoCam.bottom = -oScale;
+      orthoCam.updateProjectionMatrix();
+    }
+
+    // Resizing
+    window.addEventListener('resize', function() {
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      renderer.setSize(w, h);
+      perspCam.aspect = w / h;
+      perspCam.updateProjectionMatrix();
+      updateCameraPosition();
+      drawGizmo();
+    });
+
+    // Joystick Canvas Controller
+    var joyCanvas = document.getElementById('joy-canvas');
+    var joyCtx = joyCanvas.getContext('2d');
+    var joyState = {
+      active: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      currX: 0,
+      currY: 0,
+      dx: 0,
+      dy: 0,
+      mode: 'orbit'
+    };
+
+    function initJoyCanvas() {
+      var rect = joyCanvas.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      joyCanvas.width = rect.width * dpr;
+      joyCanvas.height = rect.height * dpr;
+      drawJoystick();
+    }
+
+    function drawJoystick() {
+      var w = joyCanvas.width;
+      var h = joyCanvas.height;
+      joyCtx.clearRect(0, 0, w, h);
+
+      var cx = w / 2;
+      var cy = h / 2;
+      var baseRadius = Math.min(cx, cy) * 0.76;
+
+      // Outer boundary circle
+      joyCtx.beginPath();
+      joyCtx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
+      joyCtx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+      joyCtx.lineWidth = 1.5;
+      joyCtx.setLineDash([4, 4]);
+      joyCtx.stroke();
+      joyCtx.setLineDash([]);
+
+      // Inner concentric circle track
+      joyCtx.beginPath();
+      joyCtx.arc(cx, cy, baseRadius * 0.42, 0, Math.PI * 2);
+      joyCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      joyCtx.lineWidth = 1;
+      joyCtx.stroke();
+
+      // Dashed crosshairs
+      joyCtx.beginPath();
+      joyCtx.setLineDash([3, 4]);
+      joyCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      joyCtx.lineWidth = 1;
+      joyCtx.moveTo(cx - baseRadius, cy);
+      joyCtx.lineTo(cx + baseRadius, cy);
+      joyCtx.moveTo(cx, cy - baseRadius);
+      joyCtx.lineTo(cx, cy + baseRadius);
+      joyCtx.stroke();
+      joyCtx.setLineDash([]);
+
+      // Draggable Knob / Puck position
+      var knobX = cx + joyState.dx * baseRadius;
+      var knobY = cy + joyState.dy * baseRadius;
+
+      // Thumbstick Knob Outer Ring
+      joyCtx.beginPath();
+      joyCtx.arc(knobX, knobY, 26, 0, Math.PI * 2);
+      joyCtx.fillStyle = joyState.active ? 'rgba(78, 80, 98, 0.7)' : 'rgba(58, 60, 72, 0.6)';
+      joyCtx.fill();
+      joyCtx.strokeStyle = joyState.active ? 'rgba(125, 211, 252, 0.6)' : 'rgba(255, 255, 255, 0.2)';
+      joyCtx.lineWidth = 1.5;
+      joyCtx.stroke();
+
+      // Thumbstick Center Pip
+      joyCtx.beginPath();
+      joyCtx.arc(knobX, knobY, 7, 0, Math.PI * 2);
+      joyCtx.fillStyle = joyState.active ? '#7dd3fc' : 'rgba(255, 255, 255, 0.4)';
+      joyCtx.fill();
+    }
+
+    joyCanvas.addEventListener('pointerdown', function(e) {
+      e.preventDefault();
+      joyCanvas.setPointerCapture(e.pointerId);
+      joyState.active = true;
+      joyState.pointerId = e.pointerId;
+      var rect = joyCanvas.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var maxR = (Math.min(rect.width, rect.height) / 2) * 0.76;
+
+      var px = e.clientX - cx;
+      var py = e.clientY - cy;
+      var dist = Math.hypot(px, py);
+      if (dist > maxR) {
+        px = (px / dist) * maxR;
+        py = (py / dist) * maxR;
+      }
+      joyState.dx = px / maxR;
+      joyState.dy = py / maxR;
+      drawJoystick();
+    });
+
+    joyCanvas.addEventListener('pointermove', function(e) {
+      if (!joyState.active || e.pointerId !== joyState.pointerId) return;
+      e.preventDefault();
+      var rect = joyCanvas.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      var maxR = (Math.min(rect.width, rect.height) / 2) * 0.76;
+
+      var px = e.clientX - cx;
+      var py = e.clientY - cy;
+      var dist = Math.hypot(px, py);
+      if (dist > maxR) {
+        px = (px / dist) * maxR;
+        py = (py / dist) * maxR;
+      }
+      joyState.dx = px / maxR;
+      joyState.dy = py / maxR;
+      drawJoystick();
+    });
+
+    function releaseJoystick(e) {
+      if (!joyState.active) return;
+      joyState.active = false;
+      joyState.pointerId = null;
+      joyState.dx = 0;
+      joyState.dy = 0;
+      drawJoystick();
+    }
+    joyCanvas.addEventListener('pointerup', releaseJoystick);
+    joyCanvas.addEventListener('pointercancel', releaseJoystick);
+
+    // 3D Interactive Orientation Gizmo
+    var gizmoCanvas = document.getElementById('gizmo-canvas');
+    var gizmoCtx = gizmoCanvas.getContext('2d');
+    var gizmoHitTargets = [];
+
+    function initGizmoCanvas() {
+      var rect = gizmoCanvas.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      gizmoCanvas.width = rect.width * dpr;
+      gizmoCanvas.height = rect.height * dpr;
+      drawGizmo();
+    }
+
+    function drawGizmo() {
+      var w = gizmoCanvas.width;
+      var h = gizmoCanvas.height;
+      gizmoCtx.clearRect(0, 0, w, h);
+      gizmoHitTargets = [];
+
+      var cx = w / 2;
+      var cy = h / 2;
+      var axisLen = Math.min(cx, cy) * 0.68;
+
+      var camRot = new THREE.Matrix4();
+      camRot.extractRotation(activeCamera.matrixWorldInverse);
+
+      var axes = [
+        { name: '+X', dir: new THREE.Vector3(1, 0, 0), color: '#ef4444', label: 'X', view: { theta: Math.PI / 2, phi: Math.PI / 2 } },
+        { name: '-X', dir: new THREE.Vector3(-1, 0, 0), color: '#7f1d1d', label: '-X', view: { theta: -Math.PI / 2, phi: Math.PI / 2 }, back: true },
+        { name: '+Y', dir: new THREE.Vector3(0, 1, 0), color: '#3b82f6', label: 'Y', view: { theta: 0, phi: 0.001 } },
+        { name: '-Y', dir: new THREE.Vector3(0, -1, 0), color: '#1e3a8a', label: '-Y', view: { theta: 0, phi: Math.PI - 0.001 }, back: true },
+        { name: '+Z', dir: new THREE.Vector3(0, 0, 1), color: '#22c55e', label: 'Z', view: { theta: 0, phi: Math.PI / 2 } },
+        { name: '-Z', dir: new THREE.Vector3(0, 0, -1), color: '#14532d', label: '-Z', view: { theta: Math.PI, phi: Math.PI / 2 }, back: true }
+      ];
+
+      axes.forEach(function(axis) {
+        var v = axis.dir.clone().applyMatrix4(camRot);
+        axis.screenX = cx + v.x * axisLen;
+        axis.screenY = cy - v.y * axisLen;
+        axis.depth = v.z;
+      });
+
+      axes.sort(function(a, b) { return a.depth - b.depth; });
+
+      // Center sphere hub
+      gizmoCtx.beginPath();
+      gizmoCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+      gizmoCtx.fillStyle = '#9ca3af';
+      gizmoCtx.fill();
+
+      // Render axes
+      axes.forEach(function(axis) {
+        gizmoCtx.beginPath();
+        gizmoCtx.moveTo(cx, cy);
+        gizmoCtx.lineTo(axis.screenX, axis.screenY);
+        gizmoCtx.strokeStyle = axis.color;
+        gizmoCtx.lineWidth = 2.5;
+        gizmoCtx.stroke();
+
+        var dSize = axis.back ? 5 : 8;
+        gizmoCtx.save();
+        gizmoCtx.translate(axis.screenX, axis.screenY);
+        gizmoCtx.beginPath();
+        gizmoCtx.moveTo(0, -dSize);
+        gizmoCtx.lineTo(dSize, 0);
+        gizmoCtx.lineTo(0, dSize);
+        gizmoCtx.lineTo(-dSize, 0);
+        gizmoCtx.closePath();
+        gizmoCtx.fillStyle = axis.color;
+        gizmoCtx.fill();
+        gizmoCtx.strokeStyle = '#18181c';
+        gizmoCtx.lineWidth = 1;
+        gizmoCtx.stroke();
+        gizmoCtx.restore();
+
+        gizmoHitTargets.push({
+          x: axis.screenX,
+          y: axis.screenY,
+          radius: dSize + 8,
+          axis: axis
+        });
+      });
+    }
+
+    gizmoCanvas.addEventListener('click', function(e) {
+      var rect = gizmoCanvas.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      var clickX = (e.clientX - rect.left) * dpr;
+      var clickY = (e.clientY - rect.top) * dpr;
+
+      for (var i = gizmoHitTargets.length - 1; i >= 0; i--) {
+        var t = gizmoHitTargets[i];
+        if (Math.hypot(clickX - t.x, clickY - t.y) <= t.radius) {
+          camState.targetTheta = t.axis.view.theta;
+          camState.targetPhi = t.axis.view.phi;
+          showToast('Aligned to ' + t.axis.name);
+          break;
+        }
+      }
+    });
+
+    // Animation & Physics Loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (joyState.active && (joyState.dx !== 0 || joyState.dy !== 0)) {
+        if (joyState.mode === 'orbit') {
+          var speed = 0.035;
+          camState.targetTheta += joyState.dx * speed;
+          camState.targetPhi -= joyState.dy * speed;
+
+          if (camState.snap45 && !joyState.active) {
+            var step = Math.PI / 4;
+            camState.targetTheta = Math.round(camState.targetTheta / step) * step;
+          }
+        } else {
+          var panSpeed = 0.06;
+          var forward = new THREE.Vector3();
+          activeCamera.getWorldDirection(forward);
+          forward.y = 0;
+          forward.normalize();
+          var right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+          camState.target.addScaledVector(right, joyState.dx * panSpeed);
+          camState.target.addScaledVector(forward, -joyState.dy * panSpeed);
+        }
+      }
+
+      updateCameraPosition();
+      renderer.render(scene, activeCamera);
+      drawGizmo();
+    }
+
+    // UI Wiring & Interactions
+    var ctrlPanel = document.getElementById('ctrl-panel');
+    var dragPos = { isDragging: false, startX: 0, startY: 0, initialLeft: 0, initialTop: 0 };
+
+    ctrlPanel.addEventListener('pointerdown', function(e) {
+      if (e.target.closest('button, canvas, input')) return;
+      dragPos.isDragging = true;
+      dragPos.startX = e.clientX;
+      dragPos.startY = e.clientY;
+      var rect = ctrlPanel.getBoundingClientRect();
+      dragPos.initialLeft = rect.left;
+      dragPos.initialTop = rect.top;
+      ctrlPanel.style.right = 'auto';
+      ctrlPanel.style.left = rect.left + 'px';
+      ctrlPanel.style.top = rect.top + 'px';
+      ctrlPanel.setPointerCapture(e.pointerId);
+    });
+
+    ctrlPanel.addEventListener('pointermove', function(e) {
+      if (!dragPos.isDragging) return;
+      var dx = e.clientX - dragPos.startX;
+      var dy = e.clientY - dragPos.startY;
+      var newX = Math.max(8, Math.min(window.innerWidth - ctrlPanel.offsetWidth - 8, dragPos.initialLeft + dx));
+      var newY = Math.max(8, Math.min(window.innerHeight - ctrlPanel.offsetHeight - 8, dragPos.initialTop + dy));
+      ctrlPanel.style.left = newX + 'px';
+      ctrlPanel.style.top = newY + 'px';
+    });
+
+    function stopDragging() { dragPos.isDragging = false; }
+    ctrlPanel.addEventListener('pointerup', stopDragging);
+    ctrlPanel.addEventListener('pointercancel', stopDragging);
+
+    // Joystick Mode
+    var btnJoy = document.getElementById('btn-joy-mode');
+    btnJoy.addEventListener('click', function() {
+      joyState.mode = (joyState.mode === 'orbit') ? 'pan' : 'orbit';
+      btnJoy.textContent = (joyState.mode === 'orbit') ? 'JOY' : 'PAN';
+      showToast('Navigation Mode: ' + joyState.mode.toUpperCase());
+    });
+
+    // Ortho / Perspective Toggle
+    var btnOrtho = document.getElementById('btn-ortho-toggle');
+    var camStatus = document.getElementById('cam-status');
+    btnOrtho.addEventListener('click', function() {
+      isOrtho = !isOrtho;
+      activeCamera = isOrtho ? orthoCam : perspCam;
+      btnOrtho.classList.toggle('on', isOrtho);
+      btnOrtho.textContent = isOrtho ? 'PERSP' : 'ORTHO';
+      camStatus.textContent = isOrtho ? 'ORTHO' : 'PERSP (Orbital)';
+      showToast('Camera: ' + (isOrtho ? 'Orthographic' : 'Perspective'));
+    });
+
+    // Zoom - / +
+    document.getElementById('btn-zoom-out').addEventListener('click', function() {
+      camState.targetRadius = Math.min(25, camState.targetRadius * 1.25);
+      showToast('Zoom Out');
+    });
+    document.getElementById('btn-zoom-in').addEventListener('click', function() {
+      camState.targetRadius = Math.max(2, camState.targetRadius * 0.8);
+      showToast('Zoom In');
+    });
+
+    // Preset View Buttons
+    var viewButtons = ['btn-view-sc', 'btn-view-front', 'btn-view-all', 'btn-view-pln'];
+    function clearViewActive() {
+      viewButtons.forEach(function(id) { document.getElementById(id).classList.remove('on'); });
+    }
+
+    document.getElementById('btn-view-sc').addEventListener('click', function() {
+      clearViewActive();
+      this.classList.add('on');
+      camState.targetTheta = -Math.PI / 4;
+      camState.targetPhi = Math.PI / 3;
+      camState.targetRadius = 9;
+      camState.target.set(0, 1, 0);
+      showToast('View: Scene Isometric');
+    });
+
+    document.getElementById('btn-view-front').addEventListener('click', function() {
+      clearViewActive();
+      this.classList.add('on');
+      camState.targetTheta = 0;
+      camState.targetPhi = Math.PI / 2;
+      camState.targetRadius = 9;
+      camState.target.set(0, 1, 0);
+      showToast('View: Front Elevation');
+    });
+
+    document.getElementById('btn-view-all').addEventListener('click', function() {
+      clearViewActive();
+      this.classList.add('on');
+      camState.target.set(0, 1, 0);
+      camState.targetRadius = 11;
+      showToast('View: Frame All');
+    });
+
+    document.getElementById('btn-view-pln').addEventListener('click', function() {
+      clearViewActive();
+      this.classList.add('on');
+      camState.targetTheta = 0;
+      camState.targetPhi = 0.001;
+      camState.targetRadius = 8;
+      camState.target.set(0, 0, 0);
+      showToast('View: Align to Plane');
+    });
+
+    // Bottom Bar Controls
+    document.getElementById('btn-rst').addEventListener('click', function() {
+      camState.targetTheta = -Math.PI / 4;
+      camState.targetPhi = Math.PI / 3;
+      camState.targetRadius = 9;
+      camState.target.set(0, 1, 0);
+      showToast('View: Reset');
+    });
+
+    var btnSnap = document.getElementById('btn-snap-45');
+    btnSnap.addEventListener('click', function() {
+      camState.snap45 = !camState.snap45;
+      btnSnap.classList.toggle('on', camState.snap45);
+      if (camState.snap45) {
+        var step = Math.PI / 4;
+        camState.targetTheta = Math.round(camState.targetTheta / step) * step;
+      }
+      showToast('45 deg Snap: ' + (camState.snap45 ? 'ON' : 'OFF'));
+    });
+
+    document.getElementById('btn-fce').addEventListener('click', function() {
+      showToast('Face Normal Align: Ready');
+    });
+
+    document.getElementById('btn-vw').addEventListener('click', function() {
+      this.classList.toggle('on');
+      showToast('View Align Mode ' + (this.classList.contains('on') ? 'Active' : 'Released'));
+    });
+
+    var btnLcl = document.getElementById('btn-lcl');
+    var btnWld = document.getElementById('btn-wld');
+    var gizmoBadge = document.getElementById('gizmo-mode-badge');
+
+    btnLcl.addEventListener('click', function() {
+      btnLcl.classList.add('on');
+      btnWld.classList.remove('on');
+      gizmoBadge.textContent = 'LCL';
+      showToast('Coordinate Frame: Local (LCL)');
+    });
+
+    btnWld.addEventListener('click', function() {
+      btnWld.classList.add('on');
+      btnLcl.classList.remove('on');
+      gizmoBadge.textContent = 'WLD';
+      showToast('Coordinate Frame: World (WLD)');
+    });
+
+    window.addEventListener('DOMContentLoaded', function() {
+      initJoyCanvas();
+      initGizmoCanvas();
+      animate();
+    });
+  </script>
+</body>
+</html>

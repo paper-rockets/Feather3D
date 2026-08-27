@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-08-27T07:14:03.782Z",
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "logs": [
+    {
+      "timestamp": "2026-08-27T07:14:01.875Z",
+      "step": "Harness Initialized",
+      "status": "INFO",
+      "details": {
+        "version": "1.0.0"
+      }
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.584Z",
+      "step": "Starting Full Live Diagnostics",
+      "status": "INFO"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.584Z",
+      "step": "Engine & Viewport Initialization",
+      "status": "PASS"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.585Z",
+      "step": "Layer Addition & Active Selection",
+      "status": "PASS"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.586Z",
+      "step": "Curve Creation & Ribbon Mesh Generation",
+      "status": "PASS"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.587Z",
+      "step": "Curve Creation & Tube Mesh Generation",
+      "status": "PASS"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.587Z",
+      "step": "Symmetry Manager Plane & Mirroring",
+      "status": "PASS"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.588Z",
+      "step": "History Manager Undo/Redo Execution",
+      "status": "PASS"
+    },
+    {
+      "timestamp": "2026-08-27T07:14:03.588Z",
+      "step": "Live Diagnostics Completed",
+      "status": "INFO",
+      "details": {
+        "passed": 6,
+        "failed": 0,
+        "total": 6
+      }
+    }
+  ]
+}

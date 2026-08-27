@@ -1,0 +1,28 @@
+{
+  "name": "feathersketch-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test:math": "npx vite-node tests/test-math-geometry.ts",
+    "test:core": "npx vite-node tests/test-core-scene.ts",
+    "test:io": "npx vite-node tests/test-io-serializers.ts",
+    "test:drawing-modes": "npx vite-node tests/test-drawing-modes.ts",
+    "test:all": "npx vite-node tests/test-math-geometry.ts && npx vite-node tests/test-core-scene.ts && npx vite-node tests/test-io-serializers.ts && npx vite-node tests/test-drawing-modes.ts",
+    "test:headless": "npx vite-node tests/run-headless-diagnostics.ts"
+  },
+  "dependencies": {
+    "three": "^0.174.0",
+    "three-mesh-bvh": "^0.9.3",
+    "three-stdlib": "^2.35.14"
+  },
+  "devDependencies": {
+    "@types/three": "^0.174.0",
+    "puppeteer-core": "^25.9.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0"
+  }
+}

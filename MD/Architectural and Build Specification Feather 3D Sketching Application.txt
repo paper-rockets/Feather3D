@@ -1,0 +1,148 @@
+# Architectural and Build Specification: Feather 3D Sketching Application
+
+## 1. System Overview
+
+* **Core Function:** Real-time 3D curve generation, spatial surfacing, and solid modeling rendering.
+* **Platform Target:** iPadOS (Offline processing).
+* **Rendering Engine:** Airbreath (Proprietary). Forthcoming v2.0 architecture targets Metal 4 API (iPadOS 26+) for volumetric bucket fill and high-density object management.
+* **File Format:** `.feather` (local storage only; encapsulates curves, spatial coordinates, materials, and metadata).
+* **Thematic UI Constants:** Dark UI theme, `#00FF00` (Selection Green), Orange (Guide Origin), Red/Green/Blue (X/Y/Z Global Axes).
+
+---
+
+## 2. Workspace and GUI Layout
+
+The workspace strictly segregates UI components into four immutable quadrants based on mutually exclusive state logic to minimize cognitive load.
+
+| Quadrant | Designation | Core Modalities & Triggers |
+| --- | --- | --- |
+| **Top-Left** | System Menu | Home, Capture Thumbnail, View (Hide UI, AR Toggle), Control (Dark Mode, Pencil/Cursor Settings). |
+| **Top-Right** | Tool Menu | Draw/Draw Shape, Erase/Vacuum, Select/Deselect, Mirror, Clipboard (floating 2D reference), Stage Panel. |
+| **Left-Edge** | Sidebar Menu | Brush Properties (Type, Size, Opacity, Pressure, Injector), History, Color (HSV, Hex, Eyedropper, Materials). |
+| **Bottom-Center** | Context Menu | *Dynamic.* Draw Mode: Draw 3D Guide, Loft, Primitives. Selection Mode: Duplicate, Liquify, Transform, Delete. |
+
+---
+
+## 3. Data & File Architecture
+
+* **Home Screen Layout:** Sidebar (Recents, Folders, Settings) and Grid view.
+* **Performance Optimization:**
+* *Render Caching:* Toggleable in settings to cache engine state upon opening files.
+* *Lighten Tool:* A decimation algorithm accessible via contextual long-press to reduce vertex count/file size (destructive or copied).
+
+
+* **Data Management:** Native bulk `.feather` import/export required due to strict offline, local-only storage protocol.
+
+---
+
+## 4. Input & Hardware Mapping
+
+### Apple Pencil Pro Integration
+
+* **Input Bifurcation:** Apple Pencil strictly for creation/manipulation; human touch strictly for navigation.
+* **Squeeze Menu:** Contextual radial palette summoned at stylus tip (Undo/Redo, Tool modifiers, "Find Group" proximity tooltip).
+* **Stamp & Barrel Roll:** Duplicates selection. Twisting the stylus utilizes gyroscope data to translate torque into Z-axis rotation.
+* **Haptic Feedback:** Engaged on erase, guide-snapping, and Injector sampling.
+
+### Multi-Touch Gestures (Navigation)
+
+| Gesture | Action | Mechanics |
+| --- | --- | --- |
+| 1-Finger Swipe | Spheroid Rotation | Turntable rotation around defined Orbit Point. |
+| 2-Finger Pinch | Zoom Translation | Adjusts Z-axis proximity. |
+| 2-Finger Swipe | Planar Pan | Linear translation across X and Y axes. |
+| 3-Finger Double Tap | Projection Toggle | Snaps between perspective and orthographic flat projection. |
+| 3-Finger Vertical | FOV Adjustment | Scales Field of View (10mm to 500mm). |
+| 1-Finger Hold | Anchor Pinning | Forces Orbit Point to touched geometry or coordinate. |
+
+*Note: "Finger-Pen" UI override treats touch as stylus input, disabling 1-finger viewport rotation.*
+
+### Hardware Keyboard Bindings
+
+| Category | Keystroke / Modifier | Action |
+| --- | --- | --- |
+| **Navigation** | `Spacebar` / `Spacebar x2` | Rotate / Perfect View Snap |
+|  | `D` / `F` | Zoom / Pan View |
+|  | `Tab x2` | Switch Projection View |
+| **Tools** | `B` (Toggle) | Draw / Draw Shape |
+|  | `E` (Toggle) | Erase / Vacuum (Object delete) |
+|  | `W` or `V` / `Shift` + `X` | Toggle Selection / Mirror |
+|  | `I` / `U` | Activate Injector / Hide UI |
+| **Brush Config** | `[` , `]` / `-` , `=` | Radius Adjust / Opacity Adjust |
+| **Modification** | `Shift` + `D` | Duplicate |
+|  | `Shift` + `Cmd` + `D` | Duplicate Symmetrically (Center/Mirror) |
+
+---
+
+## 5. Stroke Physics & Rendering
+
+### Brush Dynamics
+
+* **Size Constraints:** 1mm to 300mm bounds.
+* **Opacity Constraints:** 0% to 100% bounds.
+* **UI Input:** Slider for relative adjustments; tap slider for numerical keypad (absolute precision).
+* **Data Sampling:**
+* *Eyedropper:* Extracts hex color only.
+* *Injector:* Holistic cloning tool (Type, Size, Opacity, Color, Pressure settings).
+
+
+
+### Material & Surface Engine
+
+| Material | Lighting Response | Pattern Support | Characteristics |
+| --- | --- | --- | --- |
+| **Shadeless** | Flat albedo; ignores light/shadows. | Supported | Flat UI/2D aesthetic. |
+| **Shaded** | Volumetric gradients; dynamic shadows. | Supported | Reacts to global scene lighting. |
+| **Glow** | Emissive bloom effect. | Unsupported | Bloom radius dictated by global Environment Tab. |
+| **Cutout** | Spatial boolean (masking). | Unsupported | Mirrors background color/image to create negative space. |
+
+* **Supported Patterns:** Dot, Line, Cross, Terrazzo, Stippled Dot (Features real-time intensity, angle, and contrast sliders).
+* **Toon Shading:** Global environment toggle forcing hard, un-gradated boundaries on "Shaded" materials.
+
+---
+
+## 6. Spatial Mechanics & World Architecture
+
+### Stage Hierarchy
+
+* **Group Tab:** Manages object grouping (Parent groups highlight desaturated green when partial children are selected).
+* **Resource Tab:** Manages external assets.
+* *2D Images:* Spawn perpendicular to camera vector.
+* *3D OBJ:* Spawn at global `0,0,0`.
+* *Collision States:* Active (Shrink-wrap collision), Passive (Visible, mathematically ignored), Hidden (Retained in memory only).
+
+
+
+### Environment Parameters
+
+* **Coordinate System:** 1 grid unit = 1000mm. Focal boundary limit = 100 meters.
+* **Lighting:** Spherical UI for altitude/vectors. Auto-alignment syncs light source to camera angle.
+* **Post-Processing:** Depth of Field (tethered to Orbit Point), grain, retro pixelation.
+
+### Surfacing and Primitives
+
+* **Draw 3D Guide:** Generates a mathematical plane perpendicular to viewing angle (marked by orange origin line).
+* **Bend 3D Guide:** Folds existing guides along a new intersecting curve using the origin as a pivot.
+* **Loft:** NURBS-style surfacing between sequential curves. Controlled via Tension Slider (smooth vs. angular).
+* **Primitives:** Cubes, Pyramids, Spheres, Tubes spawned at center. Segment Slider dictates topological resolution.
+* **Draw Shape (Algorithmic Tension):** Holding stylus at stroke completion snaps to perfect lines/arcs; drag to manually adjust tension before lifting.
+
+### Transformation (Joystick UI)
+
+* **2D Joystick:** Planar UI for non-uniform scaling, movement, and rotation in screen space.
+* **3D Joystick:** Spatial UI (Central trackball, translation cones, rotation arcs).
+* *Orthographic Collapse:* In "Perfect Views" (pure front/top elevations), depth-axis cones/arcs are algorithmically hidden to prevent accidental Z-axis shifts.
+
+---
+
+## 7. Advanced Pipelines & Export
+
+* **Augmented Reality (AR):** Replaces 2-finger pan with vertical Y-axis levitation gesture. Ambient light sensor maps physical room color temperature to virtual shadows.
+* **Sequence (Keyframing):** Timeline editor logging spatial coordinates and FOV as discrete "shots". Features Rule-of-Thirds overlay and exact X/Y/Z coordinate readout.
+* **Export Formats:**
+* *Images:* PNG (Alpha transparency strips post-processing FX), JPG.
+* *Video:* MP4 (Custom bitrate/framerate, Sequence render, 360° turntable, Timelapse), GIF.
+* *3D Topology:* OBJ, GLTF. (Visibility constraint: ONLY toggled "ON" groups export. GLTF bakes color into vertex data).
+
+
+* **Interoperability:** Custom Python Blender extension handles decimation and material-based curve joining to mitigate vertex-heavy `.feather` data.

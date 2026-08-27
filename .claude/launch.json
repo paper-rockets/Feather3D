@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "feather-preview",
+      "runtimeExecutable": "npm.cmd",
+      "runtimeArgs": ["run", "preview"],
+      "port": 3000
+    }
+  ]
+}

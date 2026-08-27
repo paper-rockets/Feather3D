@@ -184,6 +184,9 @@ export class CameraNavWidgetUI {
               <span id="cnav-plane-depth-val" class="pnav-depth-val">0</span>
             </div>
             <div class="pnav-readout" id="cnav-plane-readout">Drawing on: Floor</div>
+            <div style="display: flex; gap: 4px; margin-top: 6px;">
+              <button class="btn btn-sm" id="cnav-toggle-plane-btn" style="flex: 1; font-weight: 700; height: 26px; border-radius: 0px; background: var(--accent, #2563eb); color: #fff;">PLANE: VISIBLE</button>
+            </div>
           </div>
         </div>
 
@@ -428,6 +431,18 @@ export class CameraNavWidgetUI {
 
       this.applyToPlaneGuide();
     });
+
+    const planeVisBtn = this.element.querySelector('#cnav-toggle-plane-btn') as HTMLButtonElement;
+    if (planeVisBtn) {
+      planeVisBtn.addEventListener('click', () => {
+        const gm = this.engine.guideManager;
+        const currentVis = gm.planeGuide.group.visible;
+        gm.planeGuide.setVisible(!currentVis);
+        planeVisBtn.textContent = !currentVis ? 'PLANE: VISIBLE' : 'PLANE: HIDDEN';
+        planeVisBtn.style.background = !currentVis ? 'var(--accent, #2563eb)' : 'var(--btn-subtle, rgba(0,0,0,0.06))';
+        planeVisBtn.style.color = !currentVis ? '#ffffff' : 'var(--mut, #666)';
+      });
+    }
   }
 
   private handleOrbitMove(e: PointerEvent): void {

@@ -30,13 +30,13 @@ export class EnvironmentSettings {
 
   constructor(config?: Partial<EnvironmentConfig>) {
     this.config = {
-      bgColor: '#d4ddd6',
+      bgColor: '#f4f6f8',
       showGroundGrid: true,
       showAxes: false,
       gridSize: 10,
       gridDivisions: 20,
-      gridColorCenter: '#968060',
-      gridColorGrid: '#c4bedb',
+      gridColorCenter: '#334155',
+      gridColorGrid: '#cbd5e1',
       ambientIntensity: 0.8,
       directionalIntensity: 1.2,
       sunPosition: new THREE.Vector3(5, 10, 7),

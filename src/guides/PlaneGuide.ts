@@ -8,6 +8,7 @@ export class PlaneGuide {
   public gridHelper: THREE.GridHelper;
   public planeMesh: THREE.Mesh;
   public originLine: THREE.Line;
+  public borderLines: THREE.LineSegments;
   public group: THREE.Group;
   public plane: THREE.Plane;
   public isBent: boolean = false;
@@ -21,18 +22,18 @@ export class PlaneGuide {
     this.group = new THREE.Group();
     this.group.name = 'PlaneGuide';
 
-    // Visual grid — kept subtle so it doesn't double the scene grid
-    this.gridHelper = new THREE.GridHelper(size, 8, 0x44aaff, 0x44aaff);
-    (this.gridHelper.material as THREE.Material).opacity = 0.18;
+    // Visual grid on plane
+    this.gridHelper = new THREE.GridHelper(size, 8, 0x3b82f6, 0x93c5fd);
+    (this.gridHelper.material as THREE.Material).opacity = 0.65;
     (this.gridHelper.material as THREE.Material).transparent = true;
     this.group.add(this.gridHelper);
 
-    // Transparent interactive quad mesh for snapping
+    // Visible translucent canvas sheet for drawing
     const quadGeo = new THREE.PlaneGeometry(size, size, 16, 16);
     const quadMat = new THREE.MeshBasicMaterial({
-      color: 0x1a9940,
+      color: 0x93c5fd,
       transparent: true,
-      opacity: 0.08,
+      opacity: 0.35,
       side: THREE.DoubleSide,
       depthWrite: false
     });
@@ -40,13 +41,32 @@ export class PlaneGuide {
     this.planeMesh.rotation.x = Math.PI * 0.5; // align with XZ initially
     this.group.add(this.planeMesh);
 
-    // Bright Orange Origin Anchor Line
+    // Crisp Canvas Border Outline
+    const hs = size * 0.5;
+    const borderPts = [
+      new THREE.Vector3(-hs, 0.002, -hs), new THREE.Vector3(hs, 0.002, -hs),
+      new THREE.Vector3(hs, 0.002, -hs), new THREE.Vector3(hs, 0.002, hs),
+      new THREE.Vector3(hs, 0.002, hs), new THREE.Vector3(-hs, 0.002, hs),
+      new THREE.Vector3(-hs, 0.002, hs), new THREE.Vector3(-hs, 0.002, -hs)
+    ];
+    const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPts);
+    const borderMat = new THREE.LineBasicMaterial({
+      color: 0x1e293b,
+      transparent: true,
+      opacity: 1.0,
+      linewidth: 2,
+      depthTest: false
+    });
+    this.borderLines = new THREE.LineSegments(borderGeo, borderMat);
+    this.group.add(this.borderLines);
+
+    // Crisp Cobalt Origin Anchor Line
     const originGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(-size * 0.5, 0.005, 0),
       new THREE.Vector3(size * 0.5, 0.005, 0)
     ]);
     const originMat = new THREE.LineBasicMaterial({
-      color: 0xff6600,
+      color: 0x2563eb,
       linewidth: 3,
       depthTest: false
     });

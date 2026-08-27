@@ -13,7 +13,7 @@
      FEATHER STUDIO SIGNATURE LIGHT THEME (Default)
      Clean frosted-glass pills, deep crisp ink, high contrast
      ======================================================== */
-  --bg: #d4ddd6;
+  --bg: #f4f6f8;
   --bg-glass: rgba(255, 255, 255, 0.85);
   --bg-glass-hover: rgba(255, 255, 255, 0.95);
   --bg-glass-active: #ffffff;
@@ -21,35 +21,35 @@
 
   --bdr: rgba(45, 42, 65, 0.16);
   --bdr-hover: rgba(45, 42, 65, 0.32);
-  --bdr-accent: #ff6b4a;
+  --bdr-accent: #2563eb;
 
   --ink: #161726;
   --mut: #545672;
-  --accent: #ff6b4a;
-  --accent-glow: rgba(255, 107, 74, 0.35);
-  --accent-hover: #ff8264;
-  --accent-active: #e65535;
+  --accent: #2563eb;
+  --accent-glow: rgba(37, 99, 235, 0.35);
+  --accent-hover: #1d4ed8;
+  --accent-active: #1e40af;
 
-  --pan: rgba(255, 255, 255, 0.85);
-  --pan-hover: rgba(255, 255, 255, 0.96);
+  --pan: rgba(255, 255, 255, 0.96);
+  --pan-hover: rgba(255, 255, 255, 1);
   --pan-solid: #ffffff;
 
-  --active: #ff6b4a;
+  --active: #2563eb;
   --active-fg: #ffffff;
-  --active-bg: rgba(255, 107, 74, 0.16);
-  --active-bdr: #ff6b4a;
+  --active-bg: rgba(37, 99, 235, 0.14);
+  --active-bdr: #2563eb;
 
   --btn-subtle: rgba(25, 26, 40, 0.06);
   --btn-subtle-hover: rgba(25, 26, 40, 0.12);
 
-  --shadow: 0 8px 24px rgba(45, 40, 75, 0.14);
-  --shadow-raise: 0 4px 16px rgba(255, 107, 74, 0.30);
-  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-raise: 0 2px 8px rgba(37, 99, 235, 0.30);
+  --shadow-subtle: 0 1px 4px rgba(0, 0, 0, 0.06);
 
-  --radius: 14px;
-  --radius-pill: 30px;
-  --radius-sm: 8px;
-  --radius-xs: 4px;
+  --radius: 0px;
+  --radius-pill: 0px;
+  --radius-sm: 0px;
+  --radius-xs: 0px;
 
   --blur: blur(14px);
   --blur-heavy: blur(20px);
@@ -68,29 +68,29 @@ body.dark-mode {
 
   --bdr: rgba(255, 255, 255, 0.18);
   --bdr-hover: rgba(255, 255, 255, 0.35);
-  --bdr-accent: #ff6b4a;
+  --bdr-accent: #3b82f6;
 
   --ink: #ffffff;
   --mut: #b4b8d6;
-  --accent: #ff6b4a;
-  --accent-glow: rgba(255, 107, 74, 0.45);
-  --accent-hover: #ff8264;
-  --accent-active: #e65535;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.45);
+  --accent-hover: #60a5fa;
+  --accent-active: #2563eb;
 
   --pan: rgba(24, 26, 38, 0.92);
   --pan-hover: rgba(34, 38, 54, 0.96);
   --pan-solid: #181926;
 
-  --active: #ff6b4a;
+  --active: #3b82f6;
   --active-fg: #ffffff;
-  --active-bg: rgba(255, 107, 74, 0.25);
-  --active-bdr: #ff6b4a;
+  --active-bg: rgba(59, 130, 246, 0.25);
+  --active-bdr: #3b82f6;
 
   --btn-subtle: rgba(255, 255, 255, 0.08);
   --btn-subtle-hover: rgba(255, 255, 255, 0.16);
 
   --shadow: 0 10px 32px rgba(0, 0, 0, 0.6);
-  --shadow-raise: 0 4px 18px rgba(255, 107, 74, 0.4);
+  --shadow-raise: 0 4px 18px rgba(59, 130, 246, 0.4);
   --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
@@ -463,7 +463,7 @@ body.left-handed #tool-dock {
   font-weight: 800;
   letter-spacing: 0.05em;
   padding: 1px 4px;
-  border-radius: 4px;
+  border-radius: 0px;
   background: var(--btn-subtle);
   color: var(--mut);
   margin-left: 3px;
@@ -542,7 +542,7 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 .pill-swatch-circle {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 2px solid var(--ink);
   cursor: pointer;
   box-shadow: var(--shadow-subtle);
@@ -550,7 +550,7 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 }
 
 .pill-swatch-circle:hover {
-  transform: scale(1.08);
+  transform: scale(1.04);
   border-color: var(--accent);
 }
 
@@ -567,7 +567,7 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 .pill-value-circle {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   color: var(--ink);
@@ -582,13 +582,13 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 .pill-slider-container:hover .pill-value-circle {
   border-color: var(--ink);
   background: var(--btn-subtle-hover);
-  transform: scale(1.06);
+  transform: scale(1.04);
 }
 
 .size-target-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: var(--ink);
   transition: width 0.1s ease, height 0.1s ease;
 }
@@ -596,6 +596,7 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 .pill-opacity-circle {
   position: relative;
   overflow: hidden;
+  border-radius: 0px;
   background: var(--btn-subtle);
 }
 
@@ -614,9 +615,9 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 }
 
 .pill-capsule-btn {
-  width: 32px;
-  height: 36px;
-  border-radius: 16px;
+  width: 38px;
+  height: 32px;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   display: flex;
@@ -641,7 +642,7 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 .capsule-toggle-bar {
   width: 4px;
   height: 16px;
-  border-radius: 2px;
+  border-radius: 0px;
   background: var(--mut);
   transition: background 0.14s ease;
 }
@@ -653,7 +654,7 @@ body.left-handed #sidebar-panel.brush-vertical-pill {
 .pill-round-btn {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   color: var(--ink);
@@ -831,7 +832,7 @@ body.left-handed #undo-redo-dock {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
-  border-radius: 3px;
+  border-radius: 0px;
   background: var(--btn-subtle-hover);
   outline: none;
   cursor: pointer;
@@ -842,7 +843,7 @@ body.left-handed #undo-redo-dock {
   appearance: none;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: var(--accent);
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -1273,7 +1274,7 @@ body.left-handed #camera-nav-widget {
 .navw-zbtn {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   color: var(--ink);
@@ -1303,7 +1304,7 @@ body.left-handed #camera-nav-widget {
   position: relative;
   width: 120px;
   height: 120px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: var(--btn-subtle);
   border: 1.5px solid var(--bdr);
   cursor: crosshair;
@@ -1350,7 +1351,7 @@ body.left-handed #camera-nav-widget {
   left: 50%;
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: var(--accent);
   border: 2px solid #ffffff;
   box-shadow: 0 0 10px var(--accent-glow);
@@ -1382,7 +1383,7 @@ body.left-handed #camera-nav-widget {
   left: 50%;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: var(--pan-solid);
   border: 2px solid var(--accent);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 10px var(--accent-glow);
@@ -1396,7 +1397,7 @@ body.left-handed #camera-nav-widget {
 .cnav-stick-puck-inner {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: var(--accent);
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
 }
@@ -1475,7 +1476,7 @@ body.left-handed #camera-nav-widget {
   font-size: 9px;
   font-weight: 700;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   color: var(--ink);
@@ -1518,7 +1519,7 @@ body.left-handed #camera-nav-widget {
   height: 54px;
   background: var(--pan-solid);
   border: 1.5px solid var(--accent);
-  border-radius: 4px;
+  border-radius: 0px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   transform-style: preserve-3d;
   transition: transform 0.1s ease-out;
@@ -1540,8 +1541,8 @@ body.left-handed #camera-nav-widget {
   right: 0;
   top: 50%;
   height: 2px;
-  background: #ff6600;
-  box-shadow: 0 0 4px rgba(255, 102, 0, 0.8);
+  background: #2563eb;
+  box-shadow: 0 0 4px rgba(37, 99, 235, 0.8);
 }
 
 .pnav-presets {
@@ -1554,7 +1555,7 @@ body.left-handed #camera-nav-widget {
   font-size: 9px;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   color: var(--mut);
@@ -1652,7 +1653,7 @@ body.left-handed #camera-nav-widget {
   font-size: 9px;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
   background: var(--btn-subtle);
   color: var(--mut);
@@ -1760,7 +1761,7 @@ body.dark-mode .cnav-haptic-btn.active {
 .status-swatch {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 1.5px solid var(--ink);
   flex-shrink: 0;
 }
@@ -1871,9 +1872,9 @@ body.dark-mode .cnav-haptic-btn.active {
   position: fixed;
   pointer-events: none;
   z-index: 10000;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 2px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 12px rgba(255, 107, 74, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.6), inset 0 0 6px rgba(255, 255, 255, 0.4);
   transform: translate(-50%, -50%);
   opacity: 0;
   transition: opacity 0.12s ease, width 0.08s ease, height 0.08s ease;
@@ -1895,7 +1896,7 @@ body.dark-mode .cnav-haptic-btn.active {
 .pen-hover-reticle {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 1.5px solid var(--accent);
   box-shadow: 0 0 10px var(--accent-glow);
   position: relative;
@@ -1907,7 +1908,7 @@ body.dark-mode .cnav-haptic-btn.active {
 .pen-hover-center-dot {
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: 0px;
   background: #ffffff;
 }
 

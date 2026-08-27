@@ -251,7 +251,7 @@ export class UIManager {
         this.touchCursorEl.style.top = `${data.screenY}px`;
         this.touchCursorEl.style.width = `${radius * 2}px`;
         this.touchCursorEl.style.height = `${radius * 2}px`;
-        this.touchCursorEl.style.backgroundColor = data.colorHex || '#ff6b4a';
+        this.touchCursorEl.style.backgroundColor = data.colorHex || '#2563eb';
         this.touchCursorEl.style.opacity = '0.85';
       } else if (data.type === 'hover') {
         // Pen Cursor Active (Hovering with Stylus)

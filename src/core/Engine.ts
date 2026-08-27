@@ -580,7 +580,10 @@ export class Engine {
           this.brushEngine.size,
           this.brushEngine.color,
           this.brushEngine.opacity,
-          this.brushEngine.materialType
+          this.brushEngine.materialType,
+          undefined,
+          undefined,
+          this.brushEngine.animatedOverlay
         );
 
         let mirrorCurve: FeatherCurve | null = null;
@@ -593,7 +596,10 @@ export class Engine {
               this.brushEngine.size,
               this.brushEngine.color,
               this.brushEngine.opacity,
-              this.brushEngine.materialType
+              this.brushEngine.materialType,
+              undefined,
+              undefined,
+              this.brushEngine.animatedOverlay
             );
           }
         }
@@ -928,7 +934,10 @@ export class Engine {
             this.brushEngine.size,
             this.brushEngine.color,
             this.brushEngine.opacity,
-            this.brushEngine.materialType
+            this.brushEngine.materialType,
+            undefined,
+            undefined,
+            this.brushEngine.animatedOverlay
           );
 
           let mirrorCurve: FeatherCurve | null = null;
@@ -941,7 +950,10 @@ export class Engine {
                 this.brushEngine.size,
                 this.brushEngine.color,
                 this.brushEngine.opacity,
-                this.brushEngine.materialType
+                this.brushEngine.materialType,
+                undefined,
+                undefined,
+                this.brushEngine.animatedOverlay
               );
             }
           }

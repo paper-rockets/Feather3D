@@ -932,13 +932,47 @@ body.presets-drawer-active #undo-redo-dock {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
-.brush-library-title {
-  font-size: 11px;
+.brush-drawer-tabs {
+  display: flex;
+  gap: 3px;
+  background: var(--btn-subtle);
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.drawer-mode-tab {
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+}
+
+.drawer-mode-tab:hover {
   color: var(--ink);
+}
+
+.drawer-mode-tab.active {
+  background: var(--active);
+  color: #ffffff;
+}
+
+.drawer-filter-subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
 }
 
 .brush-library-header-actions {
@@ -984,12 +1018,43 @@ body.presets-drawer-active #undo-redo-dock {
   border-color: var(--accent);
 }
 
+.brush-category-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.btn-cat-nav {
+  width: 22px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--bdr);
+  background: var(--btn-subtle);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-cat-nav:hover {
+  background: var(--btn-subtle-hover);
+  border-color: var(--bdr-hover);
+}
+
 .brush-category-tabs {
+  flex: 1;
   display: flex;
   gap: 4px;
   overflow-x: auto;
   padding: 2px 0;
   scrollbar-width: none;
+  white-space: nowrap;
 }
 
 .brush-category-tabs::-webkit-scrollbar {
@@ -1059,6 +1124,12 @@ body.presets-drawer-active #undo-redo-dock {
   font-size: 11px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.brush-card-desc {
+  font-size: 10px;
+  color: var(--mut);
+  line-height: 1.35;
 }
 
 .brush-card-meta {

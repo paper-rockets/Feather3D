@@ -1,5 +1,6 @@
 import { StrokeProfile } from '../geometry/StrokeGeometryBuilder';
 import { MaterialType } from '../shaders/CustomShaderMaterials';
+import { AnimatedMaterialType } from '../shaders/tslAnimatedMaterials';
 
 export type BrushCategory =
   | 'all'
@@ -11,18 +12,37 @@ export type BrushCategory =
   | 'fx'
   | 'nature'
   | 'smear'
-  | 'animated'
   | 'custom';
 
 export const STARTER_BRUSH_IDS: string[] = [
-  'rainbow_streak',
-  'glow_neon',
-  'stardust_splatter',
-  'fire_magic',
-  'paint_splatter',
-  'round_acrylic',
   'pencil_hb',
   'felt_pen',
+  'technical_pen',
+  'round_acrylic',
+  'flat_bristle',
+  'copic_chisel',
+  'glow_neon',
+  'hair_coil',
+  'paint_splatter',
+  'foliage_leaf'
+];
+
+export interface AnimationOption {
+  id: AnimatedMaterialType | 'none';
+  name: string;
+  description: string;
+}
+
+export const ANIMATION_OPTIONS: AnimationOption[] = [
+  { id: 'none', name: 'Static (Off)', description: 'Solid clean stroke rendering without continuous animation' },
+  { id: 'waterfall', name: 'Waterfall Flow', description: 'Continuous downward liquid cascade with procedural foamy streaks' },
+  { id: 'caustic', name: 'Water Caustics', description: 'Dual-frequency Voronoi solar underwater light refraction' },
+  { id: 'foam', name: 'Ocean Foam', description: 'Surging wave crest with threshold cellular foam borders' },
+  { id: 'ripple', name: 'Water Ripples', description: 'Concentric expanding harmonic perturbation rings' },
+  { id: 'rainbow_scroll', name: 'Rainbow Scroll', description: 'Traveling HSV spectral chromatic rainbow wave' },
+  { id: 'sparkle', name: 'Sparkle Shimmer', description: 'Twinkling glittering multi-octave starburst particles' },
+  { id: 'lava', name: 'Lava Magma Flow', description: 'Crust fissure heat glow with turbulent molten magma convection' },
+  { id: 'galaxy', name: 'Galaxy Cosmic Drift', description: 'Dual rotating nebula nebular clouds with stellar star field' }
 ];
 
 export interface BrushPreset {
@@ -51,16 +71,14 @@ export interface BrushCategoryInfo {
 }
 
 export const BRUSH_CATEGORIES: BrushCategoryInfo[] = [
-  { id: 'starter', name: 'Starter', description: 'Fun brushes to get started — rainbow, glow, stardust & more' },
-  { id: 'all', name: 'All Brushes', description: 'Complete brush collection' },
+  { id: 'starter', name: 'Starter', description: 'Popular versatile brushes for sketching and painting' },
+  { id: 'all', name: 'All Brushes', description: 'Complete brush tip collection' },
   { id: 'basics', name: 'Pencils & Pens', description: 'Graphite pencils, technical inking & fine pens' },
   { id: 'paints', name: 'Acrylics & Oils', description: 'Wet media, loaded bristle rakes & impasto' },
   { id: 'markers', name: 'Markers & Inks', description: 'Copic chisel markers, highlighters & felt pens' },
   { id: 'hair', name: 'Hair & Curls', description: '3D afro coils, curly waves, crimp & hair rakes' },
-  { id: 'fx', name: 'FX & Textures', description: 'Neon glow, rainbow streaks, stardust & halftones' },
+  { id: 'fx', name: '3D Tubes & FX', description: 'Neon glow, stardust, halftones & 3D tubes' },
   { id: 'nature', name: 'Nature & Leaves', description: 'Maple, oak, fir needles & foliage bunches' },
-  { id: 'smear', name: 'Smudge & Blend', description: 'Soft smear, fan blend & textured smudging' },
-  { id: 'animated', name: 'Animated & Magic', description: 'Water effects, rainbow, sparkle, lava & galaxy animated strokes' },
   { id: 'custom', name: 'Custom Presets', description: 'User saved brush configurations' }
 ];
 
@@ -927,15 +945,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
   },
 
   // -------------------------------------------------------------
-  // 8. ANIMATED & MAGIC MATERIALS
+  // 8. 3D TUBES & FX PRESETS
   // -------------------------------------------------------------
   waterfall_stream: {
     id: 'waterfall_stream',
-    name: 'Waterfall Stream',
-    category: 'animated',
-    description: 'Animated toon waterfall with flowing noise layers and highlights',
+    name: 'Liquid Stream',
+    category: 'fx',
+    description: 'Smooth flowing ribbon profile for liquid and cascade strokes',
     profile: 'ribbon',
-    materialType: 'waterfall',
+    materialType: 'basic',
     defaultSize: 0.060,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.40,
@@ -943,16 +961,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#1d9fd6',
     iconFile: 'Wash.png'
   },
   caustic_light: {
     id: 'caustic_light',
-    name: 'Caustic Light',
-    category: 'animated',
-    description: 'Animated underwater caustic light beams via smooth Voronoi',
+    name: 'Caustic Ribbon',
+    category: 'fx',
+    description: 'Tapered flowing broad ribbon stroke for optical & light gestures',
     profile: 'ribbon',
-    materialType: 'caustic',
+    materialType: 'basic',
     defaultSize: 0.070,
     defaultOpacity: 0.90,
     smoothingAlpha: 0.35,
@@ -960,16 +977,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#1ca8b8',
     iconFile: 'glowneon.png'
   },
   foam_lattice: {
     id: 'foam_lattice',
-    name: 'Foam Lattice',
-    category: 'animated',
-    description: 'Cel-shaded animated foam bubbles via dual opposing FBM noise',
+    name: 'Soft Ribbon Mesh',
+    category: 'fx',
+    description: 'Broad smoothed ribbon tip for energetic surfaces and foam effects',
     profile: 'ribbon',
-    materialType: 'foam',
+    materialType: 'basic',
     defaultSize: 0.065,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.35,
@@ -977,16 +993,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#2488aa',
     iconFile: 'blurry.png'
   },
   ripple_strand: {
     id: 'ripple_strand',
-    name: 'Ripple Strand',
-    category: 'animated',
-    description: 'Stylized flowing ripple with sinusoidal wave crests',
+    name: 'Wave Ribbon',
+    category: 'fx',
+    description: 'Uniform smoothed ribbon tip for flowing gestures and waves',
     profile: 'ribbon',
-    materialType: 'ripple',
+    materialType: 'basic',
     defaultSize: 0.055,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.40,
@@ -994,16 +1009,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#3078a0',
     iconFile: 'Wash.png'
   },
   rainbow_ribbon: {
     id: 'rainbow_ribbon',
-    name: 'Rainbow Ribbon',
-    category: 'animated',
-    description: 'Animated scrolling rainbow gradient with shimmering noise',
+    name: 'Smooth Ribbon 3D',
+    category: 'fx',
+    description: 'High-precision curved camera-oriented flat ribbon',
     profile: 'ribbon',
-    materialType: 'rainbow_scroll',
+    materialType: 'basic',
     defaultSize: 0.055,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.40,
@@ -1011,16 +1025,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#ffffff',
     iconFile: 'glowbrush.png'
   },
   sparkle_trail: {
     id: 'sparkle_trail',
-    name: 'Sparkle Trail',
-    category: 'animated',
-    description: 'Animated twinkling starburst sparkles with glowing rays',
+    name: 'Tapered Trail',
+    category: 'fx',
+    description: 'Dynamic pressure-tapered gesture trail with clean vertex normals',
     profile: 'ribbon',
-    materialType: 'sparkle',
+    materialType: 'basic',
     defaultSize: 0.060,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.35,
@@ -1028,16 +1041,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#ffd700',
     iconFile: 'sparkle.png'
   },
   lava_flow: {
     id: 'lava_flow',
-    name: 'Lava Flow',
-    category: 'animated',
-    description: 'Animated bubbling molten magma and incandescent glow',
+    name: 'Tube 3D Volumetric',
+    category: 'fx',
+    description: 'Full 3D cylindrical volumetric tube stroke with rounded caps',
     profile: 'tube',
-    materialType: 'lava',
+    materialType: 'basic',
     defaultSize: 0.065,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.35,
@@ -1045,16 +1057,15 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#ff4500',
     iconFile: 'Wispy.png'
   },
   galaxy_swirl: {
     id: 'galaxy_swirl',
-    name: 'Galaxy Swirl',
-    category: 'animated',
-    description: 'Deep cosmic nebula with sharp twinkling star cluster grid',
+    name: 'Broad Nebula Rake',
+    category: 'fx',
+    description: 'Wide expressive gesture ribbon with stabilized smoothing',
     profile: 'ribbon',
-    materialType: 'galaxy',
+    materialType: 'basic',
     defaultSize: 0.070,
     defaultOpacity: 1.0,
     smoothingAlpha: 0.35,
@@ -1062,7 +1073,6 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     taperEnd: true,
     pressureRadius: true,
     pressureOpacity: false,
-    colorHex: '#6a0dad',
     iconFile: 'blurry.png'
   }
 };

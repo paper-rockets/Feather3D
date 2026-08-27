@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BrushPreset, BRUSH_PRESETS } from './BrushPresets';
 import { StrokeProfile } from '../geometry/StrokeGeometryBuilder';
 import { MaterialType } from '../shaders/CustomShaderMaterials';
+import { AnimatedMaterialType } from '../shaders/tslAnimatedMaterials';
 
 export class BrushEngine {
   public activePreset: BrushPreset;
@@ -10,23 +11,25 @@ export class BrushEngine {
   public color: THREE.Color;
   public smoothingAlpha: number;
   public materialType: MaterialType;
+  public animatedOverlay: AnimatedMaterialType | 'none' = 'none';
   public profile: StrokeProfile;
   public taperStart: boolean;
   public taperEnd: boolean;
   public pressureSensitivity: boolean = true;
 
   public onPresetChange?: (preset: BrushPreset) => void;
+  public onAnimatedOverlayChange?: (overlay: AnimatedMaterialType | 'none') => void;
 
   constructor() {
-    this.activePreset = BRUSH_PRESETS['rainbow_streak'] || BRUSH_PRESETS['pencil_hb'] || Object.values(BRUSH_PRESETS)[0];
-    this.size = this.activePreset.defaultSize;
-    this.opacity = this.activePreset.defaultOpacity;
-    this.color = new THREE.Color(this.activePreset.colorHex || 0x1a1a2e);
-    this.smoothingAlpha = this.activePreset.smoothingAlpha;
-    this.materialType = this.activePreset.materialType;
-    this.profile = this.activePreset.profile;
-    this.taperStart = this.activePreset.taperStart;
-    this.taperEnd = this.activePreset.taperEnd;
+    this.activePreset = BRUSH_PRESETS['pencil_hb'] || BRUSH_PRESETS['felt_pen'] || Object.values(BRUSH_PRESETS)[0];
+    this.size = this.activePreset?.defaultSize ?? 0.015;
+    this.opacity = this.activePreset?.defaultOpacity ?? 1.0;
+    this.color = new THREE.Color(0x161726);
+    this.smoothingAlpha = this.activePreset?.smoothingAlpha ?? 0.45;
+    this.materialType = this.activePreset?.materialType ?? 'basic';
+    this.profile = this.activePreset?.profile ?? 'ribbon';
+    this.taperStart = this.activePreset?.taperStart ?? true;
+    this.taperEnd = this.activePreset?.taperEnd ?? true;
   }
 
   public setPreset(presetOrId: string | BrushPreset): void {
@@ -40,12 +43,17 @@ export class BrushEngine {
       this.profile = preset.profile;
       this.taperStart = preset.taperStart;
       this.taperEnd = preset.taperEnd;
-      if (preset.colorHex) {
-        this.setColor(preset.colorHex);
-      }
+      // Do NOT overwrite user's chosen color! Color remains completely independent.
       if (this.onPresetChange) {
         this.onPresetChange(this.activePreset);
       }
+    }
+  }
+
+  public setAnimatedOverlay(overlay: AnimatedMaterialType | 'none'): void {
+    this.animatedOverlay = overlay;
+    if (this.onAnimatedOverlayChange) {
+      this.onAnimatedOverlayChange(overlay);
     }
   }
 

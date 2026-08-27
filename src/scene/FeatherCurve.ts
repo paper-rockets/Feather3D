@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CurvePoint } from '../math/CurveMath';
 import { StrokeGeometryBuilder, StrokeProfile } from '../geometry/StrokeGeometryBuilder';
 import { CustomShaderMaterials, MaterialType } from '../shaders/CustomShaderMaterials';
+import { AnimatedMaterialType } from '../shaders/tslAnimatedMaterials';
 
 export interface FeatherCurveData {
   id: string;
@@ -20,6 +21,7 @@ export interface FeatherCurveData {
   color: string; // hex string e.g. "#1a1a2e"
   alpha: number;
   materialType: MaterialType;
+  animatedOverlay?: AnimatedMaterialType | 'none';
   taperStart: boolean;
   taperEnd: boolean;
   visible: boolean;
@@ -35,6 +37,7 @@ export class FeatherCurve {
   public color: THREE.Color;
   public alpha: number;
   public materialType: MaterialType;
+  public animatedOverlay: AnimatedMaterialType | 'none';
   public taperStart: boolean;
   public taperEnd: boolean;
   public visible: boolean = true;
@@ -45,11 +48,12 @@ export class FeatherCurve {
     points: CurvePoint[],
     profile: StrokeProfile = 'ribbon',
     size: number = 0.02,
-    color: THREE.Color = new THREE.Color(0x1a1a2e),
+    color: THREE.Color = new THREE.Color(0x161726),
     alpha: number = 1.0,
     materialType: MaterialType = 'shadeless',
     id?: string,
-    name?: string
+    name?: string,
+    animatedOverlay: AnimatedMaterialType | 'none' = 'none'
   ) {
     this.id = id ?? `curve_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     this.name = name ?? `Stroke ${this.id.substr(-4)}`;
@@ -59,20 +63,28 @@ export class FeatherCurve {
     this.color = color.clone();
     this.alpha = alpha;
     this.materialType = materialType;
+    this.animatedOverlay = animatedOverlay;
     this.taperStart = true;
     this.taperEnd = true;
 
     const geometry = this.generateGeometry();
-    const material = CustomShaderMaterials.createMaterial({
-      type: this.materialType,
-      opacity: this.alpha,
-      strokeAspect: this.computeAspect()
-    });
+    const material = this.createCurveMaterial();
 
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
     this.mesh.userData = { curveId: this.id };
+  }
+
+  private createCurveMaterial(): THREE.Material {
+    const hasOverlay = this.animatedOverlay && this.animatedOverlay !== 'none';
+    return CustomShaderMaterials.createMaterial({
+      type: this.materialType,
+      opacity: this.alpha,
+      strokeAspect: this.computeAspect(),
+      animatedOverlay: hasOverlay ? (this.animatedOverlay as AnimatedMaterialType) : undefined,
+      overlayBlend: 0.55
+    });
   }
 
   public computeAspect(): number {
@@ -108,15 +120,32 @@ export class FeatherCurve {
     if (this.mesh.material) {
       (this.mesh.material as THREE.Material).dispose();
     }
-    this.mesh.material = CustomShaderMaterials.createMaterial({
-      type: this.materialType,
-      opacity: this.alpha,
-      strokeAspect: this.computeAspect()
-    });
+    this.mesh.material = this.createCurveMaterial();
   }
 
-  public setColor(color: THREE.Color): void {
-    this.color.copy(color);
+  public setAnimatedOverlay(overlay: AnimatedMaterialType | 'none'): void {
+    this.animatedOverlay = overlay;
+    if (this.mesh.material) {
+      (this.mesh.material as THREE.Material).dispose();
+    }
+    this.mesh.material = this.createCurveMaterial();
+  }
+
+  public setColor(color: THREE.Color | string): void {
+    if (typeof color === 'string') {
+      this.color.set(color);
+    } else {
+      this.color.copy(color);
+    }
+    this.updateGeometry();
+  }
+
+  public setAlpha(alpha: number): void {
+    this.alpha = alpha;
+    if (this.mesh.material) {
+      (this.mesh.material as any).opacity = alpha;
+      (this.mesh.material as any).transparent = alpha < 1.0;
+    }
     this.updateGeometry();
   }
 
@@ -143,6 +172,7 @@ export class FeatherCurve {
       color: `#${this.color.getHexString()}`,
       alpha: this.alpha,
       materialType: this.materialType,
+      animatedOverlay: this.animatedOverlay,
       taperStart: this.taperStart,
       taperEnd: this.taperEnd,
       visible: this.visible,
@@ -167,7 +197,8 @@ export class FeatherCurve {
       data.alpha,
       data.materialType,
       data.id,
-      data.name
+      data.name,
+      data.animatedOverlay ?? 'none'
     );
     curve.taperStart = data.taperStart ?? true;
     curve.taperEnd = data.taperEnd ?? true;

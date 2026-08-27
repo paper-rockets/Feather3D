@@ -5,8 +5,11 @@ import {
   BRUSH_PRESETS,
   BRUSH_CATEGORIES,
   BrushCategory,
-  STARTER_BRUSH_IDS
+  STARTER_BRUSH_IDS,
+  AnimationOption,
+  ANIMATION_OPTIONS
 } from '../brushes/BrushPresets';
+import { AnimatedMaterialType } from '../shaders/tslAnimatedMaterials';
 
 export class BrushPanel {
   public element: HTMLElement;
@@ -27,6 +30,7 @@ export class BrushPanel {
   private redoBtn!: HTMLButtonElement;
 
   private isPresetsDrawerOpen: boolean = false;
+  private activeDrawerTab: 'brushes' | 'animations' = 'brushes';
   private activeCategory: BrushCategory = 'starter';
   private searchQuery: string = '';
   private customPresets: BrushPreset[] = [];
@@ -34,6 +38,7 @@ export class BrushPanel {
   private categoryTabsContainer!: HTMLElement;
   private presetsListContainer!: HTMLElement;
   private searchInput!: HTMLInputElement;
+  private filterRowContainer!: HTMLElement;
 
   // Active Slider Popover State
   private activeSliderProp: 'size' | 'opacity' | null = null;
@@ -80,12 +85,14 @@ export class BrushPanel {
     document.body.appendChild(this.undoRedoElement);
   }
 
-  public openPresetsDrawer(): void {
+  public openPresetsDrawer(initialTab: 'brushes' | 'animations' = 'brushes'): void {
+    this.activeDrawerTab = initialTab;
     this.isPresetsDrawerOpen = true;
     this.presetsDrawerElement.classList.add('open');
     document.body.classList.add('presets-drawer-active');
     this.colorWheelModal.hide();
     this.hideSliderPopover();
+    this.updateDrawerHeaderTabs();
     this.renderPresetsList();
   }
 
@@ -95,11 +102,17 @@ export class BrushPanel {
     document.body.classList.remove('presets-drawer-active');
   }
 
-  public togglePresetsDrawer(): void {
+  public togglePresetsDrawer(initialTab: 'brushes' | 'animations' = 'brushes'): void {
     if (this.isPresetsDrawerOpen) {
-      this.closePresetsDrawer();
+      if (this.activeDrawerTab !== initialTab) {
+        this.activeDrawerTab = initialTab;
+        this.updateDrawerHeaderTabs();
+        this.renderPresetsList();
+      } else {
+        this.closePresetsDrawer();
+      }
     } else {
-      this.openPresetsDrawer();
+      this.openPresetsDrawer(initialTab);
     }
   }
 
@@ -186,9 +199,9 @@ export class BrushPanel {
         this.opFill.style.opacity = `${clamped / 100}`;
       }
 
-      this.sliderPopoverElement.querySelectorAll('.slider-quick-pill').forEach(btn => {
-        const pVal = parseInt(btn.getAttribute('data-val') || '0', 10);
-        btn.classList.toggle('active', pVal === clamped);
+      this.sliderPopoverElement.querySelectorAll<HTMLButtonElement>('.slider-quick-pill').forEach(btn => {
+        const bVal = parseInt(btn.getAttribute('data-val') || '0', 10);
+        btn.classList.toggle('active', bVal === clamped);
       });
     };
 
@@ -273,23 +286,28 @@ export class BrushPanel {
       <button id="sb-injector-btn" class="pill-round-btn" title="Eyedropper / Injector">PICK</button>
     `;
 
-    // 2. Upgraded Brush Library Drawer
+    // 2. Upgraded Brush Library Drawer with Universal Animation Tab
     this.presetsDrawerElement.innerHTML = `
       <div class="brush-library-header">
         <div class="brush-library-title-row">
-          <span class="brush-library-title">BRUSH LIBRARY</span>
+          <div class="brush-drawer-tabs">
+            <button id="tab-drawer-brushes" class="drawer-mode-tab ${this.activeDrawerTab === 'brushes' ? 'active' : ''}">BRUSH TIPS</button>
+            <button id="tab-drawer-animations" class="drawer-mode-tab ${this.activeDrawerTab === 'animations' ? 'active' : ''}">ANIMATION SHADERS</button>
+          </div>
           <div class="brush-library-header-actions">
             <button id="btn-add-preset" class="btn-preset-action" title="Save Current as Preset">SAVE</button>
             <button id="btn-close-presets" class="btn-preset-action" title="Close Library">CLOSE</button>
           </div>
         </div>
-        <div class="brush-search-bar">
-          <input id="brush-search-input" type="text" placeholder="Search brushes..." class="brush-search-input" />
-        </div>
-        <div class="brush-category-nav-row">
-          <button id="btn-cat-prev" class="btn-cat-nav" title="Previous categories">&lt;</button>
-          <div id="brush-category-tabs" class="brush-category-tabs"></div>
-          <button id="btn-cat-next" class="btn-cat-nav" title="Next categories">&gt;</button>
+        <div id="drawer-filter-row" class="drawer-filter-subgroup">
+          <div class="brush-search-bar">
+            <input id="brush-search-input" type="text" placeholder="Search brush tips..." class="brush-search-input" />
+          </div>
+          <div class="brush-category-nav-row">
+            <button id="btn-cat-prev" class="btn-cat-nav" title="Previous categories">&lt;</button>
+            <div id="brush-category-tabs" class="brush-category-tabs"></div>
+            <button id="btn-cat-next" class="btn-cat-nav" title="Next categories">&gt;</button>
+          </div>
         </div>
       </div>
       <div id="presets-list" class="brush-library-grid"></div>
@@ -312,12 +330,24 @@ export class BrushPanel {
     this.categoryTabsContainer = this.presetsDrawerElement.querySelector('#brush-category-tabs') as HTMLElement;
     this.presetsListContainer = this.presetsDrawerElement.querySelector('#presets-list') as HTMLElement;
     this.searchInput = this.presetsDrawerElement.querySelector('#brush-search-input') as HTMLInputElement;
+    this.filterRowContainer = this.presetsDrawerElement.querySelector('#drawer-filter-row') as HTMLElement;
 
     this.undoBtn = this.undoRedoElement.querySelector('#dock-undo') as HTMLButtonElement;
     this.redoBtn = this.undoRedoElement.querySelector('#dock-redo') as HTMLButtonElement;
 
     this.renderCategoryTabs();
     this.renderPresetsList();
+  }
+
+  private updateDrawerHeaderTabs(): void {
+    const tabBrushes = this.presetsDrawerElement.querySelector('#tab-drawer-brushes');
+    const tabAnims = this.presetsDrawerElement.querySelector('#tab-drawer-animations');
+    tabBrushes?.classList.toggle('active', this.activeDrawerTab === 'brushes');
+    tabAnims?.classList.toggle('active', this.activeDrawerTab === 'animations');
+
+    if (this.filterRowContainer) {
+      this.filterRowContainer.style.display = this.activeDrawerTab === 'brushes' ? 'flex' : 'none';
+    }
   }
 
   private renderCategoryTabs(): void {
@@ -345,6 +375,11 @@ export class BrushPanel {
   private renderPresetsList(): void {
     if (!this.presetsListContainer) return;
     this.presetsListContainer.innerHTML = '';
+
+    if (this.activeDrawerTab === 'animations') {
+      this.renderAnimationsList();
+      return;
+    }
 
     const allPresets: BrushPreset[] = [
       ...Object.values(BRUSH_PRESETS),
@@ -384,15 +419,14 @@ export class BrushPanel {
 
       const displaySize = Math.round((preset.defaultSize / 2.0) * 1000);
       const displayOp = Math.round(preset.defaultOpacity * 100);
-      const colorHex = preset.colorHex || '#1a1a2e';
 
       card.innerHTML = `
-        <!-- 1. Small Authentic Brush Tip Icon -->
+        <!-- 1. Authentic Brush Tip Icon -->
         <div class="brush-card-icon-box" title="${preset.name}">
           ${preset.iconFile ? `<img src="${import.meta.env.BASE_URL}icons/brushes/${preset.iconFile}" class="brush-card-icon-img" alt="${preset.name}" onerror="this.style.display='none'" />` : `<div class="brush-card-icon-fallback"></div>`}
         </div>
 
-        <!-- 2. Compact Dynamic Stroke Effect Preview -->
+        <!-- 2. Dynamic Stroke Geometry Preview -->
         <div class="brush-card-preview-box" title="Stroke Effect">
           ${this.getBrushStrokePreviewSVG(preset)}
         </div>
@@ -404,8 +438,7 @@ export class BrushPanel {
             <span class="brush-card-category-tag">${preset.category.toUpperCase()}</span>
           </div>
           <div class="brush-card-meta-row">
-            <div class="brush-card-swatch" style="background-color: ${colorHex};"></div>
-            <span class="brush-card-stat">Size ${displaySize}</span>
+            <span class="brush-card-stat">Size ${displaySize}mm</span>
             <span class="brush-card-stat">Op ${displayOp}%</span>
             ${isCustom ? `<button class="btn-del-custom-preset" title="Delete Preset">Delete</button>` : ''}
           </div>
@@ -420,6 +453,39 @@ export class BrushPanel {
         }
 
         this.applyPreset(preset);
+        this.presetsListContainer.querySelectorAll('.brush-item-card').forEach(el => el.classList.remove('active'));
+        card.classList.add('active');
+      });
+
+      this.presetsListContainer.appendChild(card);
+    });
+  }
+
+  private renderAnimationsList(): void {
+    const currentOverlay = this.engine.brushEngine.animatedOverlay;
+
+    ANIMATION_OPTIONS.forEach(opt => {
+      const isActive = currentOverlay === opt.id;
+
+      const card = document.createElement('div');
+      card.className = `brush-item-card ${isActive ? 'active' : ''}`;
+      card.title = opt.description;
+
+      card.innerHTML = `
+        <div class="brush-card-info">
+          <div class="brush-card-name-row">
+            <span class="brush-card-title">${opt.name.toUpperCase()}</span>
+            <span class="brush-card-category-tag">${isActive ? 'ACTIVE' : 'SHADER'}</span>
+          </div>
+          <div class="brush-card-meta-row">
+            <span class="brush-card-desc">${opt.description}</span>
+          </div>
+        </div>
+      `;
+
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.engine.brushEngine.setAnimatedOverlay(opt.id);
         this.presetsListContainer.querySelectorAll('.brush-item-card').forEach(el => el.classList.remove('active'));
         card.classList.add('active');
       });
@@ -477,7 +543,7 @@ export class BrushPanel {
 
   private getBrushStrokePreviewSVG(preset: BrushPreset): string {
     const p = preset.profile;
-    const col = preset.colorHex || '#1a1a2e';
+    const col = 'currentColor';
 
     if (p === 'hair_coil') {
       return `
@@ -569,12 +635,27 @@ export class BrushPanel {
       e.stopPropagation();
       this.colorWheelModal.hide();
       this.hideSliderPopover();
-      this.togglePresetsDrawer();
+      this.togglePresetsDrawer('brushes');
     });
 
     this.presetsDrawerElement.querySelector('#btn-close-presets')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.closePresetsDrawer();
+    });
+
+    // Drawer header subtabs (BRUSH TIPS vs ANIMATION SHADERS)
+    this.presetsDrawerElement.querySelector('#tab-drawer-brushes')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.activeDrawerTab = 'brushes';
+      this.updateDrawerHeaderTabs();
+      this.renderPresetsList();
+    });
+
+    this.presetsDrawerElement.querySelector('#tab-drawer-animations')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.activeDrawerTab = 'animations';
+      this.updateDrawerHeaderTabs();
+      this.renderPresetsList();
     });
 
     // Category navigation buttons
@@ -603,7 +684,6 @@ export class BrushPanel {
       e.stopPropagation();
       const curSize = this.engine.brushEngine.size;
       const curOp = this.engine.brushEngine.opacity;
-      const hex = `#${this.engine.brushEngine.color.getHexString()}`;
       const presetName = prompt('Enter a name for this custom preset:', `Custom ${this.customPresets.length + 1}`);
       if (!presetName) return;
 
@@ -621,7 +701,6 @@ export class BrushPanel {
         taperEnd: this.engine.brushEngine.taperEnd,
         pressureRadius: this.engine.brushEngine.pressureSensitivity,
         pressureOpacity: false,
-        colorHex: hex,
         iconFile: 'palette_custombrush.png'
       };
 

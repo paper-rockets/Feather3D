@@ -205,7 +205,10 @@ export class UIManager {
     };
 
     this.contextMenu.onBrushNameClick = () => {
-      this.brushPanel.togglePresetsDrawer();
+      this.brushPanel.togglePresetsDrawer('brushes');
+    };
+    this.contextMenu.onAnimationClick = () => {
+      this.brushPanel.togglePresetsDrawer('animations');
     };
     this.contextMenu.onSizeClick = (anchorY: number) => {
       this.brushPanel.showSliderPopover('size', anchorY);
@@ -215,6 +218,14 @@ export class UIManager {
     };
     this.contextMenu.onColorClick = () => {
       this.brushPanel.colorWheelModal.toggle();
+    };
+
+    this.engine.brushEngine.onPresetChange = () => {
+      this.contextMenu.refresh();
+    };
+
+    this.engine.brushEngine.onAnimatedOverlayChange = () => {
+      this.contextMenu.refresh();
     };
 
     this.engine.onToolChange = (tool) => {

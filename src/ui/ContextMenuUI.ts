@@ -8,6 +8,7 @@ export class ContextMenuUI {
   public element: HTMLElement;
   private engine: Engine;
   public onBrushNameClick?: () => void;
+  public onAnimationClick?: () => void;
   public onSizeClick?: (anchorY: number) => void;
   public onOpacityClick?: (anchorY: number) => void;
   public onColorClick?: () => void;
@@ -42,6 +43,10 @@ export class ContextMenuUI {
       const opVal = Math.round(brush.opacity * 100);
       const colorHex = `#${brush.color.getHexString()}`;
       const guideMode = this.engine.guideManager.mode;
+      const animLabel = brush.animatedOverlay && brush.animatedOverlay !== 'none'
+        ? brush.animatedOverlay.replace('_', ' ').toUpperCase()
+        : 'STATIC';
+
       let planeName = 'FLOOR';
       if (guideMode === 'primitive') planeName = 'GUIDE';
       else if (guideMode === 'mesh') planeName = 'MESH';
@@ -53,12 +58,15 @@ export class ContextMenuUI {
         else planeName = `SIDE ${tilt} DEG`;
       }
 
-
       this.element.innerHTML = `
         <div class="context-pill status-strip">
-          <div class="status-chip status-chip-btn" id="ctx-brush-name" title="Tap to open brush library">
+          <div class="status-chip status-chip-btn" id="ctx-brush-name" title="Tap to choose brush tip">
             <span class="status-swatch" style="background:${colorHex};"></span>
             <span class="status-text">${presetName.toUpperCase()}</span>
+          </div>
+          <span class="status-sep"></span>
+          <div class="status-chip status-chip-btn" id="ctx-anim-chip" title="Tap to choose animation / shader effect">
+            <span class="status-text">FX: ${animLabel}</span>
           </div>
           <span class="status-sep"></span>
           <div class="status-chip">
@@ -136,6 +144,9 @@ export class ContextMenuUI {
     if (tool === 'draw' || tool === 'inject') {
       this.element.querySelector('#ctx-brush-name')?.addEventListener('click', () => {
         if (this.onBrushNameClick) this.onBrushNameClick();
+      });
+      this.element.querySelector('#ctx-anim-chip')?.addEventListener('click', () => {
+        if (this.onAnimationClick) this.onAnimationClick();
       });
       this.element.querySelector('#ctx-size-chip')?.addEventListener('click', (e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();

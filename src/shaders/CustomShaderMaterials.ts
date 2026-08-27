@@ -4,6 +4,7 @@ import { patternColorNode, patternAlphaNode, ExtendedPatternType } from './tslPa
 import { createAnimatedStrokeMaterial, AnimatedMaterialType } from './tslAnimatedMaterials';
 
 export type MaterialType =
+  | 'basic'
   | 'shadeless'
   | 'shaded'
   | 'cel_shaded'
@@ -180,6 +181,7 @@ export class CustomShaderMaterials {
         break;
       }
 
+      case 'basic':
       case 'shadeless':
       default: {
         const m = new THREE.MeshBasicNodeMaterial();

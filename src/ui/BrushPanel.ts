@@ -1,6 +1,5 @@
 import { Engine } from '../core/Engine';
 import { ColorWheelModalUI } from './ColorWheelModalUI';
-import { icon } from './icons';
 import {
   BrushPreset,
   BRUSH_PRESETS,
@@ -27,7 +26,7 @@ export class BrushPanel {
   private undoBtn!: HTMLButtonElement;
   private redoBtn!: HTMLButtonElement;
 
-  public isPresetsDrawerOpen: boolean = false;
+  private isPresetsDrawerOpen: boolean = false;
   private activeCategory: BrushCategory = 'starter';
   private searchQuery: string = '';
   private customPresets: BrushPreset[] = [];
@@ -42,14 +41,6 @@ export class BrushPanel {
   private isDraggingOpOnRail: boolean = false;
   private dragStartY: number = 0;
   private dragStartVal: number = 0;
-
-  // Callbacks for UIManager coordination
-  public onPresetsDrawerOpen?: () => void;
-  public onPresetsDrawerClose?: () => void;
-  public onColorWheelOpen?: () => void;
-  public onColorWheelClose?: () => void;
-  public onSliderPopoverOpen?: () => void;
-  public onSliderPopoverClose?: () => void;
 
   private static STORAGE_KEY = 'feather3d_custom_brush_presets';
 
@@ -96,15 +87,12 @@ export class BrushPanel {
     this.colorWheelModal.hide();
     this.hideSliderPopover();
     this.renderPresetsList();
-    if (this.onPresetsDrawerOpen) this.onPresetsDrawerOpen();
   }
 
   public closePresetsDrawer(): void {
-    if (!this.isPresetsDrawerOpen) return;
     this.isPresetsDrawerOpen = false;
     this.presetsDrawerElement.classList.remove('open');
     document.body.classList.remove('presets-drawer-active');
-    if (this.onPresetsDrawerClose) this.onPresetsDrawerClose();
   }
 
   public togglePresetsDrawer(): void {
@@ -125,33 +113,17 @@ export class BrushPanel {
     this.colorWheelModal.hide();
     this.closePresetsDrawer();
 
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      this.sliderPopoverElement.style.left = '50%';
-      this.sliderPopoverElement.style.top = 'auto';
-      this.sliderPopoverElement.style.bottom = '80px';
-      this.sliderPopoverElement.style.transform = 'translateX(-50%)';
-    } else {
-      const railRect = this.element.getBoundingClientRect();
-      this.sliderPopoverElement.style.transform = 'none';
-      this.sliderPopoverElement.style.left = `${railRect.right + 12}px`;
-      const popoverH = 140;
-      const topPos = Math.min(window.innerHeight - popoverH - 20, Math.max(10, anchorY - 40));
-      this.sliderPopoverElement.style.top = `${topPos}px`;
-      this.sliderPopoverElement.style.bottom = 'auto';
-    }
-
+    const railRect = this.element.getBoundingClientRect();
+    this.sliderPopoverElement.style.left = `${railRect.right + 12}px`;
+    this.sliderPopoverElement.style.top = `${Math.min(window.innerHeight - 200, Math.max(10, anchorY - 60))}px`;
     this.sliderPopoverElement.style.display = 'flex';
+
     this.renderSliderPopoverContent();
-    if (this.onSliderPopoverOpen) this.onSliderPopoverOpen();
   }
 
   public hideSliderPopover(): void {
-    if (this.activeSliderProp) {
-      this.activeSliderProp = null;
-      this.sliderPopoverElement.style.display = 'none';
-      if (this.onSliderPopoverClose) this.onSliderPopoverClose();
-    }
+    this.activeSliderProp = null;
+    this.sliderPopoverElement.style.display = 'none';
   }
 
   private renderSliderPopoverContent(): void {
@@ -162,7 +134,7 @@ export class BrushPanel {
       ? Math.round((this.engine.brushEngine.size / 2.0) * 1000)
       : Math.round(this.engine.brushEngine.opacity * 100);
 
-    const min = 1;
+    const min = isSize ? 1 : 1;
     const max = isSize ? 200 : 100;
     const unit = isSize ? 'mm' : '%';
     const title = isSize ? 'BRUSH SIZE' : 'BRUSH OPACITY';
@@ -298,7 +270,7 @@ export class BrushPanel {
       </button>
 
       <!-- Injector / Syringe Tool -->
-      <button id="sb-injector-btn" class="pill-round-btn" title="Eyedropper / Injector">${icon('syringe')}</button>
+      <button id="sb-injector-btn" class="pill-round-btn" title="Eyedropper / Injector">PICK</button>
     `;
 
     // 2. Upgraded Brush Library Drawer
@@ -307,8 +279,8 @@ export class BrushPanel {
         <div class="brush-library-title-row">
           <span class="brush-library-title">BRUSH LIBRARY</span>
           <div class="brush-library-header-actions">
-            <button id="btn-add-preset" class="btn-preset-action" title="Save Current as Preset">+ NEW</button>
-            <button id="btn-close-presets" class="btn-preset-close" title="Close Library">CLOSE</button>
+            <button id="btn-add-preset" class="btn-preset-action" title="Save Current as Preset">SAVE</button>
+            <button id="btn-close-presets" class="btn-preset-action" title="Close Library">CLOSE</button>
           </div>
         </div>
         <div class="brush-search-bar">
@@ -325,8 +297,8 @@ export class BrushPanel {
 
     // 3. Detached Undo / Redo Pill
     this.undoRedoElement.innerHTML = `
-      <button id="dock-undo" class="undo-redo-btn" title="Undo">${icon('undo')}</button>
-      <button id="dock-redo" class="undo-redo-btn" title="Redo">${icon('redo')}</button>
+      <button id="dock-undo" class="undo-redo-btn" title="Undo">UNDO</button>
+      <button id="dock-redo" class="undo-redo-btn" title="Redo">REDO</button>
     `;
 
     this.colorSwatchCircle = this.element.querySelector('#sb-color-circle') as HTMLElement;
@@ -415,14 +387,17 @@ export class BrushPanel {
       const colorHex = preset.colorHex || '#1a1a2e';
 
       card.innerHTML = `
+        <!-- 1. Small Authentic Brush Tip Icon -->
         <div class="brush-card-icon-box" title="${preset.name}">
           ${preset.iconFile ? `<img src="${import.meta.env.BASE_URL}icons/brushes/${preset.iconFile}" class="brush-card-icon-img" alt="${preset.name}" onerror="this.style.display='none'" />` : `<div class="brush-card-icon-fallback"></div>`}
         </div>
 
+        <!-- 2. Compact Dynamic Stroke Effect Preview -->
         <div class="brush-card-preview-box" title="Stroke Effect">
           ${this.getBrushStrokePreviewSVG(preset)}
         </div>
 
+        <!-- 3. Details & Meta -->
         <div class="brush-card-info">
           <div class="brush-card-name-row">
             <span class="brush-card-title">${preset.name}</span>
@@ -432,7 +407,7 @@ export class BrushPanel {
             <div class="brush-card-swatch" style="background-color: ${colorHex};"></div>
             <span class="brush-card-stat">Size ${displaySize}</span>
             <span class="brush-card-stat">Op ${displayOp}%</span>
-            ${isCustom ? `<button class="btn-del-custom-preset" title="Delete Preset">DEL</button>` : ''}
+            ${isCustom ? `<button class="btn-del-custom-preset" title="Delete Preset">Delete</button>` : ''}
           </div>
         </div>
       `;
@@ -677,16 +652,9 @@ export class BrushPanel {
 
       if (this.colorWheelModal.isVisible) {
         this.colorWheelModal.hide();
-        if (this.onColorWheelClose) this.onColorWheelClose();
       } else {
-        const isMobile = window.innerWidth < 768;
-        if (isMobile) {
-          this.colorWheelModal.showAt(10, window.innerHeight - 440);
-        } else {
-          const rect = this.colorSwatchCircle.getBoundingClientRect();
-          this.colorWheelModal.showAt(rect.right + 12, rect.top - 40);
-        }
-        if (this.onColorWheelOpen) this.onColorWheelOpen();
+        const rect = this.colorSwatchCircle.getBoundingClientRect();
+        this.colorWheelModal.showAt(rect.right + 12, rect.top - 40);
       }
     });
 
@@ -802,7 +770,6 @@ export class BrushPanel {
         !this.colorSwatchCircle.contains(target)
       ) {
         this.colorWheelModal.hide();
-        if (this.onColorWheelClose) this.onColorWheelClose();
       }
 
       // Slider Popover outside click
@@ -815,10 +782,9 @@ export class BrushPanel {
         this.hideSliderPopover();
       }
 
-      // Presets drawer outside click (desktop only, mobile is handled by backdrop)
+      // Presets drawer outside click
       if (
         this.isPresetsDrawerOpen &&
-        window.innerWidth >= 768 &&
         !this.presetsDrawerElement.contains(target) &&
         !this.profileBtn.contains(target)
       ) {

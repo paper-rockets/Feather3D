@@ -8,7 +8,6 @@ export class PlaneGuide {
   public gridHelper: THREE.GridHelper;
   public planeMesh: THREE.Mesh;
   public originLine: THREE.Line;
-  public borderLine: THREE.LineSegments;
   public group: THREE.Group;
   public plane: THREE.Plane;
   public isBent: boolean = false;
@@ -22,17 +21,16 @@ export class PlaneGuide {
     this.group = new THREE.Group();
     this.group.name = 'PlaneGuide';
 
-    // High-contrast Visual Grid
-    this.gridHelper = new THREE.GridHelper(size, 8, 0x444444, 0x888888);
-    (this.gridHelper.material as THREE.Material).opacity = 0.35;
+    // Visual grid — kept subtle so it doesn't double the scene grid
+    this.gridHelper = new THREE.GridHelper(size, 8, 0x44aaff, 0x44aaff);
+    (this.gridHelper.material as THREE.Material).opacity = 0.18;
     (this.gridHelper.material as THREE.Material).transparent = true;
-    this.gridHelper.renderOrder = 7;
     this.group.add(this.gridHelper);
 
-    // High-contrast Drawing Paper Quad
+    // Transparent interactive quad mesh for snapping
     const quadGeo = new THREE.PlaneGeometry(size, size, 16, 16);
     const quadMat = new THREE.MeshBasicMaterial({
-      color: 0x222222,
+      color: 0x1a9940,
       transparent: true,
       opacity: 0.08,
       side: THREE.DoubleSide,
@@ -40,40 +38,19 @@ export class PlaneGuide {
     });
     this.planeMesh = new THREE.Mesh(quadGeo, quadMat);
     this.planeMesh.rotation.x = Math.PI * 0.5; // align with XZ initially
-    this.planeMesh.renderOrder = 6;
     this.group.add(this.planeMesh);
 
-    // Sharp Razor-Edged Canvas Perimeter Border
-    const h = size * 0.5;
-    const borderPts = [
-      new THREE.Vector3(-h, 0.002, -h), new THREE.Vector3(h, 0.002, -h),
-      new THREE.Vector3(h, 0.002, -h), new THREE.Vector3(h, 0.002, h),
-      new THREE.Vector3(h, 0.002, h), new THREE.Vector3(-h, 0.002, h),
-      new THREE.Vector3(-h, 0.002, h), new THREE.Vector3(-h, 0.002, -h)
-    ];
-    const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPts);
-    const borderMat = new THREE.LineBasicMaterial({
-      color: 0x222222,
-      transparent: true,
-      opacity: 0.9,
-      depthWrite: false
-    });
-    this.borderLine = new THREE.LineSegments(borderGeo, borderMat);
-    this.borderLine.renderOrder = 8;
-    this.group.add(this.borderLine);
-
-    // Vibrant Red Origin Anchor Line
+    // Bright Orange Origin Anchor Line
     const originGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(-size * 0.5, 0.005, 0),
       new THREE.Vector3(size * 0.5, 0.005, 0)
     ]);
     const originMat = new THREE.LineBasicMaterial({
-      color: 0xe03040,
-      linewidth: 2,
+      color: 0xff6600,
+      linewidth: 3,
       depthTest: false
     });
     this.originLine = new THREE.Line(originGeo, originMat);
-    this.originLine.renderOrder = 9;
     this.group.add(this.originLine);
 
     this.updateTransform();
@@ -92,23 +69,6 @@ export class PlaneGuide {
     const quat = new THREE.Quaternion().setFromUnitVectors(defaultUp, this.normal);
     this.group.quaternion.copy(quat);
     this.plane.setFromNormalAndCoplanarPoint(this.normal, this.position);
-  }
-
-  /**
-   * Clamps a point on the plane to the bounded canvas quad extents.
-   */
-  public clampToCanvasBounds(worldPoint: THREE.Vector3): THREE.Vector3 {
-    const local = worldPoint.clone().sub(this.position);
-    const quatInv = this.group.quaternion.clone().invert();
-    local.applyQuaternion(quatInv);
-
-    const halfSize = this.size * 0.5;
-    local.x = THREE.MathUtils.clamp(local.x, -halfSize, halfSize);
-    local.z = THREE.MathUtils.clamp(local.z, -halfSize, halfSize);
-    local.y = 0;
-
-    local.applyQuaternion(this.group.quaternion);
-    return local.add(this.position);
   }
 
   /**

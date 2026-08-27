@@ -36,23 +36,8 @@ export class ColorWheelModalUI {
   }
 
   public showAt(x: number, y: number): void {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      this.element.style.left = '50%';
-      this.element.style.top = 'auto';
-      this.element.style.bottom = '80px';
-      this.element.style.transform = 'translateX(-50%)';
-    } else {
-      this.element.style.transform = 'none';
-      const popoverW = 260;
-      const popoverH = 460;
-      const clampedX = Math.min(window.innerWidth - popoverW - 16, Math.max(12, x));
-      const clampedY = Math.min(window.innerHeight - popoverH - 16, Math.max(12, y));
-      this.element.style.left = `${clampedX}px`;
-      this.element.style.top = `${clampedY}px`;
-      this.element.style.bottom = 'auto';
-    }
-
+    this.element.style.left = `${Math.min(window.innerWidth - 320, Math.max(10, x))}px`;
+    this.element.style.top = `${Math.min(window.innerHeight - 440, Math.max(10, y))}px`;
     this.element.style.display = 'flex';
     this.isVisible = true;
     this.drawColorWheel();
@@ -76,12 +61,7 @@ export class ColorWheelModalUI {
     if (this.isVisible) {
       this.hide();
     } else {
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) {
-        this.showAt(10, window.innerHeight - 440);
-      } else {
-        this.showAt(70, window.innerHeight / 2 - 200);
-      }
+      this.showAt(70, window.innerHeight / 2 - 200);
     }
   }
 
@@ -89,16 +69,13 @@ export class ColorWheelModalUI {
     this.element.innerHTML = `
       <div class="popover-arrow-left"></div>
 
-      <!-- Top Bar: Hex Badge, Eyedropper, and Close -->
+      <!-- Top Bar: Hex Badge and Eyedropper -->
       <div class="color-popover-topbar">
         <div id="cw-hex-badge" class="cw-hex-pill" title="Click to type HEX">
           <span id="cw-hex-text">2600FF</span>
           <input id="cw-hex-input" type="text" value="2600FF" maxlength="6" style="display: none;">
         </div>
-        <div style="display: flex; gap: 4px; align-items: center;">
-          <button id="cw-dropper-btn" class="cw-icon-btn" title="Eyedropper">${icon('syringe')}</button>
-          <button id="cw-close-btn" class="cw-close-action" title="Close Color Picker">X</button>
-        </div>
+        <button id="cw-dropper-btn" class="cw-icon-btn" title="Eyedropper">${icon('syringe')}</button>
       </div>
 
       <!-- Center: Rainbow Hue Ring + SV Square Canvas -->
@@ -128,6 +105,7 @@ export class ColorWheelModalUI {
           <button class="mat-sphere-btn ${this.activeMaterial === 'cutout' ? 'active' : ''}" data-mat="cutout" title="Cutout">
             <div class="sphere-preview sphere-cutout"></div>
           </button>
+          <div class="cutout-tooltip">Cutout</div>
         </div>
       </div>
 
@@ -250,11 +228,6 @@ export class ColorWheelModalUI {
   }
 
   private bindEvents(): void {
-    // Close button
-    this.element.querySelector('#cw-close-btn')?.addEventListener('click', () => {
-      this.hide();
-    });
-
     // Eyedropper button
     this.element.querySelector('#cw-dropper-btn')?.addEventListener('click', () => {
       this.hide();

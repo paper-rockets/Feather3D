@@ -36,7 +36,7 @@ export class ShapeRecognition {
     const avgPressure = points.reduce((acc, p) => acc + p.pressure, 0) / points.length;
     const avgTilt = points[0].tilt.clone();
 
-    // ── 1. Check for Straight Line ──
+    // --- 1. Check for Straight Line ---
     if (!isClosed) {
       const line = new THREE.Line3(startPos, endPos);
       let maxDist = 0;
@@ -64,7 +64,7 @@ export class ShapeRecognition {
       }
     }
 
-    // ── 2. Check for Circle / Ellipse ──
+    // --- 2. Check for Circle / Ellipse ---
     if (isClosed) {
       // Compute centroid
       const centroid = new THREE.Vector3();
@@ -111,7 +111,7 @@ export class ShapeRecognition {
         return { type: 'circle', points: circlePts, confidence: 1.0 - (stdDev / meanRadius) };
       }
 
-      // ── 3. Check for Rectangle / Polygon ──
+      // --- 3. Check for Rectangle / Polygon ---
       const simplified = CurveMath.simplifyDouglasPeucker(points, totalLength * 0.08);
       if (simplified.length >= 4 && simplified.length <= 6) {
         // Form regularized polygon

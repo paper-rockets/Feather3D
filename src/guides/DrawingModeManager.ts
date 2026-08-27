@@ -274,9 +274,6 @@ export class DrawingModeManager {
       const dirToHit = new THREE.Vector3().subVectors(groundHit, camera.position);
       const camForward = camera.getWorldDirection(new THREE.Vector3());
       if (dirToHit.dot(camForward) > 0) {
-        if (groundHit.length() > 8.0) {
-          groundHit.setLength(8.0);
-        }
         return {
           point: groundHit,
           normal: new THREE.Vector3(0, 1, 0),

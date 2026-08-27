@@ -7,7 +7,6 @@ export class StagePanelUI {
   private activeTab: 'layers' | 'resources' | 'env' = 'layers';
   public isVisible: boolean = false;
   public onGuideTutorialClick?: () => void;
-  public onClose?: () => void;
 
   constructor(engine: Engine) {
     this.engine = engine;
@@ -22,15 +21,12 @@ export class StagePanelUI {
   public show(): void {
     this.isVisible = true;
     this.element.style.display = 'flex';
-    this.element.classList.add('open');
     this.refresh();
   }
 
   public hide(): void {
     this.isVisible = false;
     this.element.style.display = 'none';
-    this.element.classList.remove('open');
-    if (this.onClose) this.onClose();
   }
 
   public toggle(): void {
@@ -47,28 +43,25 @@ export class StagePanelUI {
 
   private render(): void {
     this.element.innerHTML = `
-      <!-- Top Action Bar with Close Button -->
+      <!-- Top Action Bar (Trash, Duplicate, Center 3D Cube) -->
       <div class="stage-header-actions">
-        <div class="stage-header-left">
-          <button id="btn-stage-trash" class="stage-action-btn btn-trash-action" title="Delete Active Layer">${icon('trash')}</button>
-          <button id="btn-stage-dup" class="stage-action-btn" title="Duplicate Layer">${icon('duplicate')}</button>
-          <button id="btn-stage-focus" class="stage-action-btn" title="Center View on Object">${icon('cubeCenter')}</button>
-        </div>
-        <button id="btn-stage-close" class="btn-stage-close-action" title="Close Panel">CLOSE</button>
+        <button id="btn-stage-trash" class="stage-action-btn btn-trash-action" title="Delete Active Layer">${icon('trash')}</button>
+        <button id="btn-stage-dup" class="stage-action-btn" title="Duplicate Layer">${icon('duplicate')}</button>
+        <button id="btn-stage-focus" class="stage-action-btn" title="Center View on Object">${icon('cubeCenter')}</button>
       </div>
 
       <!-- 3 Green-Highlighted Icon Tabs -->
       <div class="stage-tab-header">
         <button id="tab-layers" class="stage-tab-btn ${this.activeTab === 'layers' ? 'active' : ''}" title="Layers & Groups">
-          <span class="stage-tab-label">LAYERS</span>
+          ${icon('tabLayers')}
           ${this.activeTab === 'layers' ? '<div class="tab-active-indicator"></div>' : ''}
         </button>
         <button id="tab-resources" class="stage-tab-btn ${this.activeTab === 'resources' ? 'active' : ''}" title="Resources & References">
-          <span class="stage-tab-label">RESOURCES</span>
+          ${icon('tabResources')}
           ${this.activeTab === 'resources' ? '<div class="tab-active-indicator"></div>' : ''}
         </button>
         <button id="tab-env" class="stage-tab-btn ${this.activeTab === 'env' ? 'active' : ''}" title="Environment & Scene">
-          <span class="stage-tab-label">ENVIRONMENT</span>
+          ${icon('tabEnv')}
           ${this.activeTab === 'env' ? '<div class="tab-active-indicator"></div>' : ''}
         </button>
       </div>
@@ -92,10 +85,6 @@ export class StagePanelUI {
   }
 
   private bindHeaderActionEvents(): void {
-    this.element.querySelector('#btn-stage-close')?.addEventListener('click', () => {
-      this.hide();
-    });
-
     this.element.querySelector('#btn-stage-trash')?.addEventListener('click', () => {
       if (this.engine.stageManager.layers.length > 1) {
         this.engine.stageManager.removeLayer(this.engine.stageManager.activeLayerIndex);
@@ -113,7 +102,7 @@ export class StagePanelUI {
     });
   }
 
-  public renderLayersTab(container: HTMLElement): void {
+  private renderLayersTab(container: HTMLElement): void {
     const list = document.createElement('div');
     list.className = 'stage-layer-list';
 
@@ -125,8 +114,8 @@ export class StagePanelUI {
       item.innerHTML = `
         <span class="stage-layer-name">${layer.name}</span>
         <div class="stage-layer-buttons">
-          <button data-idx="${idx}" class="btn-layer-icon btn-layer-arrow" title="Select Layer">${icon('arrowRight')}</button>
-          <button data-idx="${idx}" class="btn-layer-icon btn-layer-eye ${layer.visible ? '' : 'layer-hidden'}" title="Toggle Visibility">${icon('eye')}</button>
+          <button data-idx="${idx}" class="btn-layer-icon btn-layer-arrow" title="Select / Move">${icon('arrowRight')}</button>
+          <button data-idx="${idx}" class="btn-layer-icon btn-layer-eye ${layer.visible ? '' : 'layer-hidden'}" title="Visibility">${icon('eye')}</button>
         </div>
       `;
 
@@ -156,7 +145,7 @@ export class StagePanelUI {
     // Add New Layer Row
     const addRow = document.createElement('button');
     addRow.className = 'btn-add-layer-row';
-    addRow.innerHTML = `<span>+ NEW LAYER</span>`;
+    addRow.innerHTML = `${icon('plus')} <span>NEW LAYER</span>`;
     addRow.addEventListener('click', () => {
       this.engine.stageManager.addLayer(`Layer ${this.engine.stageManager.layers.length + 1}`);
       this.refresh();
@@ -165,6 +154,7 @@ export class StagePanelUI {
 
     container.appendChild(list);
   }
+
 
   private static BRUSH_PRESETS = [
     { name: 'Cloth line',  profile: 'ribbon', size: 0.02, opacity: 1.0,  pressure: true,  svgD: 'M4 16 C 8 6, 16 2, 32 5',   sw: '1.5' },
@@ -177,11 +167,12 @@ export class StagePanelUI {
 
   private activePresetIndex: number = 0;
 
-  public renderResourcesTab(container: HTMLElement): void {
+  private renderResourcesTab(container: HTMLElement): void {
     const presets = StagePanelUI.BRUSH_PRESETS;
 
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 10px;">
+
         <!-- Brush Presets -->
         <div>
           <div style="font-size: 9px; font-weight: 700; color: var(--mut); padding: 4px 0 6px;">BRUSH PRESETS</div>
@@ -217,7 +208,7 @@ export class StagePanelUI {
           <path d="${p.svgD}"/>
         </svg>
         <span class="preset-card-name">${p.name}</span>
-        <span class="preset-card-dot ${isActive ? 'is-active' : ''}"></span>
+        <span class="preset-card-dot" style="font-size: 8px; font-weight: 800;">${isActive ? 'ACTIVE' : ''}</span>
       `;
       card.addEventListener('click', () => {
         this.activePresetIndex = idx;
@@ -300,14 +291,14 @@ export class StagePanelUI {
     });
   }
 
-  public renderEnvTab(container: HTMLElement): void {
+  private renderEnvTab(container: HTMLElement): void {
     const air = this.engine.airbreath;
 
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 10px; font-size: 11px;">
         <!-- Wandrlust Aesthetic Presets -->
         <div style="display: flex; flex-direction: column; gap: 4px;">
-          <span style="font-weight: 700; color: var(--mut);">AESTHETIC PRESETS</span>
+          <span style="font-weight: 700; color: var(--mut);">WANDRLUST AESTHETIC PRESETS</span>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
             <button data-preset="minimalist" class="btn btn-sm preset-btn ${air.currentPreset === 'minimalist' ? 'active' : ''}">MINIMALIST</button>
             <button data-preset="cel_shaded" class="btn btn-sm preset-btn ${air.currentPreset === 'cel_shaded' ? 'active' : ''}">CEL-SHADED</button>
@@ -573,3 +564,4 @@ export class StagePanelUI {
     });
   }
 }
+

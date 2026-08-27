@@ -359,43 +359,45 @@
   </div>
 
   <!-- Floating Control Panel -->
-  <div id="ctrl-panel" style="width: 220px; padding: 12px;">
-    <!-- Body (Unified column) -->
-    <div class="ctrl-body" style="display: flex; flex-direction: column; gap: 8px;">
+  <div id="ctrl-panel">
+    <!-- Body (2 columns) -->
+    <div class="ctrl-body">
       
-      <!-- Left Subcard: Navigation & Joystick (Simplified) -->
-      <div class="ctrl-subcard" style="border: none; background: transparent; padding: 0;">
-        <div class="btn-row" style="display: none;">
-          <button class="btn-cell on" id="btn-joy-mode">JOY</button>
-          <button class="btn-cell" id="btn-ortho-toggle">ORTHO</button>
-          <button class="btn-cell" id="btn-zoom-out">-</button>
-          <button class="btn-cell" id="btn-zoom-in">+</button>
+      <!-- Left Subcard: Navigation & Joystick -->
+      <div class="ctrl-subcard">
+        <div class="btn-row">
+          <button class="btn-cell on" id="btn-joy-mode" title="Toggle Orbit / Pan mode">JOY</button>
+          <button class="btn-cell" id="btn-ortho-toggle" title="Toggle Perspective / Orthographic">ORTHO</button>
+          <button class="btn-cell" id="btn-zoom-out" title="Zoom Out">-</button>
+          <button class="btn-cell" id="btn-zoom-in" title="Zoom In">+</button>
         </div>
-        <div class="joystick-container" id="joy-container" style="height: 140px;">
+
+        <div class="joystick-container" id="joy-container">
           <canvas id="joy-canvas"></canvas>
         </div>
       </div>
 
-      <!-- Right Subcard: 3D Orientation Gizmo & Views (Simplified) -->
-      <div class="ctrl-subcard" style="border: none; background: transparent; padding: 0;">
-        <div class="btn-row" style="display: none;">
-          <button class="btn-cell on" id="btn-view-sc">Sc</button>
-          <button class="btn-cell" id="btn-view-front">Front</button>
-          <button class="btn-cell" id="btn-view-all">All</button>
-          <button class="btn-cell" id="btn-view-pln">Pln</button>
+      <!-- Right Subcard: 3D Orientation Gizmo & Views -->
+      <div class="ctrl-subcard">
+        <div class="btn-row">
+          <button class="btn-cell on" id="btn-view-sc" title="Scene Isometric View">Sc</button>
+          <button class="btn-cell" id="btn-view-front" title="Front Elevation View">Front</button>
+          <button class="btn-cell" id="btn-view-all" title="Frame All Objects">All</button>
+          <button class="btn-cell" id="btn-view-pln" title="Align to Drawing Plane">Pln</button>
         </div>
-        <div class="gizmo-container" id="gizmo-container" style="height: 120px;">
-          <span class="gizmo-badge" id="gizmo-mode-badge" style="display:none">WLD</span>
+
+        <div class="gizmo-container" id="gizmo-container">
+          <span class="gizmo-badge" id="gizmo-mode-badge">WLD</span>
           <canvas id="gizmo-canvas"></canvas>
         </div>
-        <div class="gizmo-bottom-bar" style="justify-content: center; gap: 16px; margin-top: 6px;">
+
+        <div class="gizmo-bottom-bar">
           <button class="btn-mini" id="btn-rst" title="Reset View">RST</button>
-          <div class="snap-dial on" id="btn-snap-45" title="Toggle 45 Degree Angle Snap">45&#176;</div>
+          <div class="snap-dial on" id="btn-snap-45" title="Toggle 45 Degree Angle Snap">45 deg</div>
+          <button class="btn-mini" id="btn-fce" title="Face Alignment">FCE</button>
+          <button class="btn-mini" id="btn-vw" title="View Lock">VW</button>
+          <button class="btn-mini" id="btn-lcl" title="Local Coordinates">LCL</button>
           <button class="btn-mini on" id="btn-wld" title="World Coordinates">WLD</button>
-          <!-- Hidden redundant buttons -->
-          <button class="btn-mini" id="btn-fce" style="display:none">FCE</button>
-          <button class="btn-mini" id="btn-vw" style="display:none">VW</button>
-          <button class="btn-mini" id="btn-lcl" style="display:none">LCL</button>
         </div>
       </div>
 

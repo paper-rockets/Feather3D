@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { Engine } from '../core/Engine';
 import { TopNavigation } from './TopNavigation';
 import { ToolDock } from './ToolDock';
@@ -13,11 +14,12 @@ import { MagnifierLoupeHUD } from './MagnifierLoupeHUD';
 import { GuideTutorialModal } from './GuideTutorialModal';
 import { CameraNavWidgetUI } from './CameraNavWidgetUI';
 import { PlaneNavWidgetUI } from './PlaneNavWidgetUI';
-import { SidebarManager, SidebarToolcard } from './SidebarManager';
-import { NavCubeWidget } from './NavCubeWidget';
 
-export type ActiveDrawerType = 'none' | 'brushLibrary' | 'stagePanel' | 'colorWheel' | 'sliderPopover' | 'clipboard';
-
+/**
+ * UIManager: Core controller for all user interface modules in Feather Sketch Studio V9.
+ * Coordinates Glass Dark UI layout, hide UI global view state, and Cursor Feedback HUDs.
+ * 100% clean plain text with zero emojis or decorative glyphs.
+ */
 export class UIManager {
   public rootContainer: HTMLElement;
   public engine: Engine;
@@ -35,15 +37,14 @@ export class UIManager {
   public guideTutorialModal: GuideTutorialModal;
   public cameraNavWidget: CameraNavWidgetUI;
   public planeNavWidget: PlaneNavWidgetUI;
-  public sidebarManager: SidebarManager;
-  public navCubeWidget: NavCubeWidget;
 
   public isUIHidden: boolean = false;
-  public activeDrawer: ActiveDrawerType = 'none';
-  public isMobile: boolean = false;
-
   private restoreButton!: HTMLButtonElement;
-  private backdropOverlay!: HTMLElement;
+
+  // Cursor Feedback Elements
+  private touchCursorEl!: HTMLElement;
+  private penHoverCursorEl!: HTMLElement;
+  private penCoordBadgeEl!: HTMLElement;
 
   constructor(rootContainer: HTMLElement, engine: Engine) {
     this.rootContainer = rootContainer;
@@ -64,129 +65,74 @@ export class UIManager {
     this.cameraNavWidget = new CameraNavWidgetUI(engine);
     this.planeNavWidget = new PlaneNavWidgetUI(engine);
 
-    // Phase 1: New merged UI components
-    this.sidebarManager = new SidebarManager(engine);
-    this.navCubeWidget = new NavCubeWidget(engine);
-
-    // Create sidebar toolcards from existing panel content
-    this.setupSidebarToolcards();
-
-    // Hook NavCube into render loop for real-time updates
-    engine.addAnimationCallback(() => {
-      this.navCubeWidget.update();
-    });
-
-    this.createBackdropOverlay();
     this.createRestoreButton();
-    this.checkResponsive();
+    this.createCursorFeedbackElements();
     this.mount();
     this.bindInteractions();
-    this.bindResponsiveEvents();
-  }
-
-  private createBackdropOverlay(): void {
-    this.backdropOverlay = document.createElement('div');
-    this.backdropOverlay.id = 'ui-backdrop-overlay';
-    this.backdropOverlay.className = 'ui-backdrop';
-    this.backdropOverlay.style.display = 'none';
-    this.backdropOverlay.addEventListener('click', () => {
-      this.closeAllPopovers();
-    });
   }
 
   private createRestoreButton(): void {
     this.restoreButton = document.createElement('button');
     this.restoreButton.id = 'btn-restore-ui';
-    this.restoreButton.className = 'btn btn-sm active';
+    this.restoreButton.className = 'btn btn-restore-ui';
     this.restoreButton.textContent = 'RESTORE UI';
     this.restoreButton.style.display = 'none';
-    this.restoreButton.style.position = 'fixed';
-    this.restoreButton.style.top = '12px';
-    this.restoreButton.style.left = '12px';
-    this.restoreButton.style.zIndex = '9999';
 
     this.restoreButton.addEventListener('click', () => {
       this.toggleHideUI();
     });
   }
 
-  private checkResponsive(): void {
-    this.isMobile = window.innerWidth < 768 || (window.innerWidth < 1024 && window.innerHeight > window.innerWidth);
-    document.body.classList.toggle('mobile-viewport', this.isMobile);
-    document.body.classList.toggle('desktop-viewport', !this.isMobile);
-  }
+  private createCursorFeedbackElements(): void {
+    // 1. Touch Cursor (Color circle indicator)
+    this.touchCursorEl = document.createElement('div');
+    this.touchCursorEl.id = 'touch-cursor-indicator';
+    document.body.appendChild(this.touchCursorEl);
 
-  private bindResponsiveEvents(): void {
-    window.addEventListener('resize', () => {
-      const prevMobile = this.isMobile;
-      this.checkResponsive();
-      if (prevMobile !== this.isMobile) {
-        this.closeAllPopovers();
-      }
-    });
-
-    window.addEventListener('orientationchange', () => {
-      setTimeout(() => {
-        this.checkResponsive();
-        this.closeAllPopovers();
-      }, 100);
-    });
-  }
-
-  public setActiveDrawer(drawer: ActiveDrawerType): void {
-    this.activeDrawer = drawer;
-
-    if (drawer !== 'none') {
-      if (this.isMobile) {
-        this.backdropOverlay.style.display = 'block';
-        document.body.classList.add('drawer-open-mobile');
-      }
-      document.body.classList.add('has-active-drawer');
-    } else {
-      this.backdropOverlay.style.display = 'none';
-      document.body.classList.remove('drawer-open-mobile');
-      document.body.classList.remove('has-active-drawer');
-    }
-
-    // Adapt nav widgets when heavy drawers are open
-    const shouldTuckNavs = this.isMobile && drawer !== 'none';
-    this.cameraNavWidget.element.classList.toggle('navw-tucked', shouldTuckNavs);
-    this.planeNavWidget.element.classList.toggle('navw-tucked', shouldTuckNavs);
+    // 2. Pen Cursor (Spatial Coordinate Hover Projection HUD)
+    this.penHoverCursorEl = document.createElement('div');
+    this.penHoverCursorEl.id = 'pen-hover-cursor';
+    this.penHoverCursorEl.innerHTML = `
+      <div class="pen-hover-reticle">
+        <div class="pen-hover-center-dot"></div>
+      </div>
+      <div class="pen-spatial-coord-badge" id="pen-coord-badge">X: 0.00 Y: 0.00 Z: 0.00</div>
+    `;
+    document.body.appendChild(this.penHoverCursorEl);
+    this.penCoordBadgeEl = this.penHoverCursorEl.querySelector('#pen-coord-badge') as HTMLElement;
   }
 
   public toggleHideUI(): void {
     this.isUIHidden = !this.isUIHidden;
-    document.body.classList.toggle('ui-hidden', this.isUIHidden);
-
     const elementsToToggle = [
       this.topNav.element,
+      this.toolDock.element,
       this.brushPanel.element,
       this.brushPanel.undoRedoElement,
       this.brushPanel.presetsDrawerElement,
+      this.brushPanel.sliderPopoverElement,
       this.contextMenu.element,
       this.stagePanel.element,
       this.joystickWidget.element,
       this.cameraNavWidget.element,
       this.planeNavWidget.element,
-      this.sequenceTimeline.element,
-      this.sidebarManager.element,
-      this.navCubeWidget.element
+      this.sequenceTimeline.element
     ];
 
     elementsToToggle.forEach(el => {
       if (el) {
         el.style.opacity = this.isUIHidden ? '0' : '1';
         el.style.pointerEvents = this.isUIHidden ? 'none' : 'auto';
+        el.style.transition = 'opacity 0.2s ease';
       }
     });
 
-    this.sidebarManager.setVisible(!this.isUIHidden);
     this.restoreButton.style.display = this.isUIHidden ? 'block' : 'none';
   }
 
   private mount(): void {
-    this.rootContainer.appendChild(this.backdropOverlay);
     this.rootContainer.appendChild(this.topNav.element);
+    this.rootContainer.appendChild(this.toolDock.element);
     this.rootContainer.appendChild(this.brushPanel.element);
     this.rootContainer.appendChild(this.stagePanel.element);
     this.rootContainer.appendChild(this.joystickWidget.element);
@@ -206,36 +152,19 @@ export class UIManager {
     this.stagePanel.hide();
     this.contextMenu.hide();
     this.guideTutorialModal.hide();
-    this.clipboardOverlay.hide();
-    this.setActiveDrawer('none');
   }
 
   private bindInteractions(): void {
     // ToolDock callbacks
     this.toolDock.onStageToggle = () => {
-      if (this.stagePanel.isVisible) {
-        this.stagePanel.hide();
-        this.setActiveDrawer('none');
-      } else {
-        this.closeAllPopovers();
-        this.stagePanel.show();
-        this.setActiveDrawer('stagePanel');
-      }
+      this.brushPanel.colorWheelModal.hide();
+      this.brushPanel.closePresetsDrawer();
+      this.stagePanel.toggle();
     };
 
     this.toolDock.onClipboardToggle = () => {
-      const isVisible = this.clipboardOverlay.isVisible;
       this.closeAllPopovers();
-      if (!isVisible) {
-        this.clipboardOverlay.show();
-        this.setActiveDrawer('clipboard');
-      }
-    };
-
-    // StagePanel close listener
-    this.stagePanel.onClose = () => {
-      this.stagePanel.hide();
-      this.setActiveDrawer('none');
+      this.clipboardOverlay.toggle();
     };
 
     // TopNav callbacks
@@ -264,61 +193,6 @@ export class UIManager {
       this.guideTutorialModal.show('vertical');
     };
 
-    // Brush Panel Drawer callbacks
-    this.brushPanel.onPresetsDrawerOpen = () => {
-      this.stagePanel.hide();
-      this.clipboardOverlay.hide();
-      this.setActiveDrawer('brushLibrary');
-    };
-
-    this.brushPanel.onPresetsDrawerClose = () => {
-      if (this.activeDrawer === 'brushLibrary') {
-        this.setActiveDrawer('none');
-      }
-    };
-
-    this.brushPanel.onColorWheelOpen = () => {
-      this.stagePanel.hide();
-      this.clipboardOverlay.hide();
-      this.setActiveDrawer('colorWheel');
-    };
-
-    this.brushPanel.onColorWheelClose = () => {
-      if (this.activeDrawer === 'colorWheel') {
-        this.setActiveDrawer('none');
-      }
-    };
-
-    this.brushPanel.onSliderPopoverOpen = () => {
-      this.setActiveDrawer('sliderPopover');
-    };
-
-    this.brushPanel.onSliderPopoverClose = () => {
-      if (this.activeDrawer === 'sliderPopover') {
-        this.setActiveDrawer('none');
-      }
-    };
-
-    // TopNav stage toggle -> toggles sidebar collapse or stage panel
-    this.topNav.onStageToggle = () => {
-      this.sidebarManager.setCollapsed(!this.sidebarManager.isCollapsed);
-    };
-
-    this.topNav.onClipboardToggle = () => {
-      const isVisible = this.clipboardOverlay.isVisible;
-      this.closeAllPopovers();
-      if (!isVisible) {
-        this.clipboardOverlay.show();
-        this.setActiveDrawer('clipboard');
-      }
-    };
-
-    this.topNav.onSettingsChanged = (setting, val) => {
-      if (setting === 'handMode') {
-        this.sidebarManager.toggleDockSide();
-      }
-    };
-
     // Engine callbacks
     this.engine.onOpenTutorial = (tab?: any) => {
       this.closeAllPopovers();
@@ -331,74 +205,65 @@ export class UIManager {
     };
 
     this.contextMenu.onBrushNameClick = () => {
-      this.stagePanel.hide();
       this.brushPanel.togglePresetsDrawer();
     };
-
     this.contextMenu.onSizeClick = (anchorY: number) => {
       this.brushPanel.showSliderPopover('size', anchorY);
     };
-
     this.contextMenu.onOpacityClick = (anchorY: number) => {
       this.brushPanel.showSliderPopover('opacity', anchorY);
     };
-
     this.contextMenu.onColorClick = () => {
-      this.stagePanel.hide();
       this.brushPanel.colorWheelModal.toggle();
     };
 
     this.engine.onToolChange = (tool) => {
       this.joystickWidget.setVisible(tool === 'transform');
       this.contextMenu.refresh();
-      this.topNav.setActiveTool(tool);
-    };
-
-    this.engine.onStrokeStart = () => {
-      this.closeAllPopovers();
+      if (this.toolDock.onActiveToolChange) this.toolDock.onActiveToolChange(tool);
     };
 
     this.engine.onCurveCreated = () => {
       this.stagePanel.refresh();
-      this.refreshSidebarToolcards();
       this.sequenceTimeline.refresh();
       this.contextMenu.refresh();
     };
-  }
 
-  private envCardContent!: HTMLElement;
-  private layersCardContent!: HTMLElement;
-  private resourcesCardContent!: HTMLElement;
+    // Cursor Feedback Event Binding
+    this.engine.onCursorFeedback = (data) => {
+      if (data.isDown) {
+        // Touch Cursor Active (Drawing / Touching)
+        this.penHoverCursorEl.style.opacity = '0';
 
-  private setupSidebarToolcards(): void {
-    this.envCardContent = document.createElement('div');
-    this.stagePanel.renderEnvTab(this.envCardContent);
-    const envCard = new SidebarToolcard('ENVIRONMENT & GUIDES', 'ENV', this.envCardContent);
-    this.sidebarManager.addToolcard(envCard);
+        const radius = data.radiusPx || 12;
+        this.touchCursorEl.style.left = `${data.screenX}px`;
+        this.touchCursorEl.style.top = `${data.screenY}px`;
+        this.touchCursorEl.style.width = `${radius * 2}px`;
+        this.touchCursorEl.style.height = `${radius * 2}px`;
+        this.touchCursorEl.style.backgroundColor = data.colorHex || '#ff6b4a';
+        this.touchCursorEl.style.opacity = '0.85';
+      } else if (data.type === 'hover') {
+        // Pen Cursor Active (Hovering with Stylus)
+        this.touchCursorEl.style.opacity = '0';
 
-    this.layersCardContent = document.createElement('div');
-    this.stagePanel.renderLayersTab(this.layersCardContent);
-    const layersCard = new SidebarToolcard('LAYERS & GROUPS', 'LAY', this.layersCardContent);
-    this.sidebarManager.addToolcard(layersCard);
+        this.penHoverCursorEl.style.left = `${data.screenX}px`;
+        this.penHoverCursorEl.style.top = `${data.screenY}px`;
+        this.penHoverCursorEl.style.opacity = '1';
 
-    this.resourcesCardContent = document.createElement('div');
-    this.stagePanel.renderResourcesTab(this.resourcesCardContent);
-    const resourcesCard = new SidebarToolcard('RESOURCES & ASSETS', 'RES', this.resourcesCardContent);
-    this.sidebarManager.addToolcard(resourcesCard);
-  }
+        if (data.worldPos && this.penCoordBadgeEl) {
+          const { x, y, z } = data.worldPos;
+          this.penCoordBadgeEl.textContent = `X: ${x.toFixed(2)} Y: ${y.toFixed(2)} Z: ${z.toFixed(2)}`;
+        }
+      } else {
+        // Pointer Up / Inactive
+        this.touchCursorEl.style.opacity = '0';
+        this.penHoverCursorEl.style.opacity = '0';
+      }
+    };
 
-  public refreshSidebarToolcards(): void {
-    if (this.layersCardContent) {
-      this.layersCardContent.innerHTML = '';
-      this.stagePanel.renderLayersTab(this.layersCardContent);
-    }
-    if (this.resourcesCardContent) {
-      this.resourcesCardContent.innerHTML = '';
-      this.stagePanel.renderResourcesTab(this.resourcesCardContent);
-    }
-    if (this.envCardContent) {
-      this.envCardContent.innerHTML = '';
-      this.stagePanel.renderEnvTab(this.envCardContent);
-    }
+    this.engine.onCursorHoverEnd = () => {
+      this.touchCursorEl.style.opacity = '0';
+      this.penHoverCursorEl.style.opacity = '0';
+    };
   }
 }

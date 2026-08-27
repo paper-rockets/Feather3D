@@ -60,7 +60,7 @@ export const BRUSH_CATEGORIES: BrushCategoryInfo[] = [
   { id: 'fx', name: 'FX & Textures', description: 'Neon glow, rainbow streaks, stardust & halftones' },
   { id: 'nature', name: 'Nature & Leaves', description: 'Maple, oak, fir needles & foliage bunches' },
   { id: 'smear', name: 'Smudge & Blend', description: 'Soft smear, fan blend & textured smudging' },
-  { id: 'animated', name: 'Animated Water', description: 'Waterfall, caustic, foam & ripple animated stroke materials' },
+  { id: 'animated', name: 'Animated & Magic', description: 'Water effects, rainbow, sparkle, lava & galaxy animated strokes' },
   { id: 'custom', name: 'Custom Presets', description: 'User saved brush configurations' }
 ];
 
@@ -927,7 +927,7 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
   },
 
   // -------------------------------------------------------------
-  // 8. ANIMATED WATER MATERIALS
+  // 8. ANIMATED & MAGIC MATERIALS
   // -------------------------------------------------------------
   waterfall_stream: {
     id: 'waterfall_stream',
@@ -996,5 +996,73 @@ export const BRUSH_PRESETS: Record<string, BrushPreset> = {
     pressureOpacity: false,
     colorHex: '#3078a0',
     iconFile: 'Wash.png'
+  },
+  rainbow_ribbon: {
+    id: 'rainbow_ribbon',
+    name: 'Rainbow Ribbon',
+    category: 'animated',
+    description: 'Animated scrolling rainbow gradient with shimmering noise',
+    profile: 'ribbon',
+    materialType: 'rainbow_scroll',
+    defaultSize: 0.055,
+    defaultOpacity: 1.0,
+    smoothingAlpha: 0.40,
+    taperStart: true,
+    taperEnd: true,
+    pressureRadius: true,
+    pressureOpacity: false,
+    colorHex: '#ffffff',
+    iconFile: 'glowbrush.png'
+  },
+  sparkle_trail: {
+    id: 'sparkle_trail',
+    name: 'Sparkle Trail',
+    category: 'animated',
+    description: 'Animated twinkling starburst sparkles with glowing rays',
+    profile: 'ribbon',
+    materialType: 'sparkle',
+    defaultSize: 0.060,
+    defaultOpacity: 1.0,
+    smoothingAlpha: 0.35,
+    taperStart: true,
+    taperEnd: true,
+    pressureRadius: true,
+    pressureOpacity: false,
+    colorHex: '#ffd700',
+    iconFile: 'sparkle.png'
+  },
+  lava_flow: {
+    id: 'lava_flow',
+    name: 'Lava Flow',
+    category: 'animated',
+    description: 'Animated bubbling molten magma and incandescent glow',
+    profile: 'tube',
+    materialType: 'lava',
+    defaultSize: 0.065,
+    defaultOpacity: 1.0,
+    smoothingAlpha: 0.35,
+    taperStart: true,
+    taperEnd: true,
+    pressureRadius: true,
+    pressureOpacity: false,
+    colorHex: '#ff4500',
+    iconFile: 'Wispy.png'
+  },
+  galaxy_swirl: {
+    id: 'galaxy_swirl',
+    name: 'Galaxy Swirl',
+    category: 'animated',
+    description: 'Deep cosmic nebula with sharp twinkling star cluster grid',
+    profile: 'ribbon',
+    materialType: 'galaxy',
+    defaultSize: 0.070,
+    defaultOpacity: 1.0,
+    smoothingAlpha: 0.35,
+    taperStart: true,
+    taperEnd: true,
+    pressureRadius: true,
+    pressureOpacity: false,
+    colorHex: '#6a0dad',
+    iconFile: 'blurry.png'
   }
 };

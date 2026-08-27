@@ -22,10 +22,11 @@ export class PlaneNavWidgetUI {
     this.engine = engine;
     this.element = document.createElement('div');
     this.element.id = 'plane-nav-widget';
-    this.element.className = 'navw navw-canvas';
+    this.element.className = 'navw';
+    // Hide standalone element since Plane navigation is integrated into CameraNavWidgetUI
+    this.element.style.display = 'none';
     this.render();
     this.bindEvents();
-    this.setCollapsed(true);
   }
 
   private render(): void {
@@ -59,8 +60,8 @@ export class PlaneNavWidgetUI {
         </div>
         <div class="pnav-readout" id="pnav-readout">Drawing on: Floor</div>
       </div>
-      <button class="navw-tab" id="pnav-tab" title="Toggle Canvas HUD">
-        <span class="navw-tab-text">CANVAS</span>
+      <button class="navw-tab" id="pnav-tab" title="Toggle Canvas Widget">
+        <span class="cnav-tab-label">PLANE</span>
       </button>
     `;
 
@@ -74,17 +75,13 @@ export class PlaneNavWidgetUI {
     this.updateReadout();
   }
 
-  public setCollapsed(collapsed: boolean): void {
-    this.isCollapsed = collapsed;
-    this.bodyEl.classList.toggle('navw-collapsed', this.isCollapsed);
-    this.tabEl.classList.toggle('navw-tab-collapsed', this.isCollapsed);
-  }
-
   private bindEvents(): void {
     // Pull tab
     this.tabEl.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.setCollapsed(!this.isCollapsed);
+      this.isCollapsed = !this.isCollapsed;
+      this.bodyEl.classList.toggle('navw-collapsed', this.isCollapsed);
+      this.tabEl.classList.toggle('navw-tab-flipped', this.isCollapsed);
     });
 
     // Presets
@@ -143,7 +140,7 @@ export class PlaneNavWidgetUI {
     this.applyToGuide();
   }
 
-  private applyPreset(preset: string): void {
+  public applyPreset(preset: string): void {
     switch (preset) {
       case 'floor':
         this.tiltPhi = 0; this.tiltTheta = 0; break;
@@ -211,3 +208,4 @@ export class PlaneNavWidgetUI {
     this.updateActivePreset();
   }
 }
+

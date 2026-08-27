@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { PlaneGuide } from './PlaneGuide';
 import { PrimitiveGuides, PrimitiveType } from './PrimitiveGuides';
 import { MeshGuide } from './MeshGuide';
-import { SurfaceSnapping, SurfaceSnapResult } from '../math/SurfaceSnapping';
+import { SurfaceSnapping } from '../math/SurfaceSnapping';
+import { MeshCanvasTemplates } from './MeshCanvasTemplates';
 
 export type GuideMode = 'none' | 'plane' | 'primitive' | 'mesh';
 
@@ -13,6 +14,7 @@ export class GuideManager {
   public meshGuides: MeshGuide[] = [];
   public surfaceSnapper: SurfaceSnapping;
   public guideGroup: THREE.Group;
+  public activeTemplateId: string | null = null;
 
   constructor() {
     this.guideGroup = new THREE.Group();
@@ -38,6 +40,45 @@ export class GuideManager {
     this.primitiveGuide.setType(type);
   }
 
+  public addMeshGuide(guide: MeshGuide): void {
+    this.meshGuides.push(guide);
+    this.guideGroup.add(guide.group);
+    guide.setVisible(this.mode === 'mesh');
+  }
+
+  public removeMeshGuide(guide: MeshGuide): void {
+    const idx = this.meshGuides.indexOf(guide);
+    if (idx !== -1) {
+      this.meshGuides.splice(idx, 1);
+      this.guideGroup.remove(guide.group);
+    }
+  }
+
+  public clearMeshGuides(): void {
+    this.meshGuides.forEach(guide => {
+      this.guideGroup.remove(guide.group);
+    });
+    this.meshGuides = [];
+    this.activeTemplateId = null;
+  }
+
+  public setMeshGuide(guide: MeshGuide): void {
+    this.clearMeshGuides();
+    this.addMeshGuide(guide);
+    this.setMode('mesh');
+  }
+
+  public loadTemplateGuide(templateId: string): MeshGuide | null {
+    const res = MeshCanvasTemplates.loadTemplate(templateId);
+    if (!res) return null;
+
+    this.clearMeshGuides();
+    this.activeTemplateId = templateId;
+    this.addMeshGuide(res.guide);
+    this.setMode('mesh');
+    return res.guide;
+  }
+
   /**
    * Snaps a screen point to the active guide surface.
    */
@@ -46,22 +87,13 @@ export class GuideManager {
     camera: THREE.Camera
   ): { point: THREE.Vector3; normal: THREE.Vector3 } | null {
     if (this.mode === 'none') {
-      // Unproject to default ground plane Y=0 with bounded radius
+      // Unproject to default ground plane Y=0
       const defaultPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(ndc, camera);
-
-      // Check grazing angle near horizon
-      if (Math.abs(raycaster.ray.direction.y) < 0.03) return null;
-
       const hit = new THREE.Vector3();
       const res = raycaster.ray.intersectPlane(defaultPlane, hit);
       if (res) {
-        // Clamp to ground grid radius (6.0 units)
-        const maxR = 6.0;
-        if (hit.length() > maxR) {
-          hit.setLength(maxR);
-        }
         return { point: hit, normal: new THREE.Vector3(0, 1, 0) };
       }
       return null;
@@ -81,17 +113,10 @@ export class GuideManager {
       }
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(ndc, camera);
-
-      // Prevent division by near-zero dot product when looking parallel to the plane
-      const dot = Math.abs(raycaster.ray.direction.dot(this.planeGuide.normal));
-      if (dot < 0.03) return null;
-
       const hit = new THREE.Vector3();
       const res = raycaster.ray.intersectPlane(this.planeGuide.plane, hit);
       if (res) {
-        // Bound to the plane's finite canvas extents
-        const boundedPoint = this.planeGuide.clampToCanvasBounds(hit);
-        return { point: boundedPoint, normal: this.planeGuide.normal.clone() };
+        return { point: hit, normal: this.planeGuide.normal.clone() };
       }
       return null;
     }
@@ -110,7 +135,18 @@ export class GuideManager {
     }
 
     if (this.mode === 'mesh') {
-      const meshes = this.meshGuides.map(m => m.mesh);
+      const meshes: THREE.Mesh[] = [];
+      this.meshGuides.forEach(g => {
+        const submeshes = g.getMeshes();
+        if (submeshes && submeshes.length > 0) {
+          meshes.push(...submeshes);
+        } else if (g.mesh) {
+          meshes.push(g.mesh);
+        }
+      });
+
+      if (meshes.length === 0) return null;
+
       const snapRes = this.surfaceSnapper.snapScreenToSurface(
         ndc.x,
         ndc.y,

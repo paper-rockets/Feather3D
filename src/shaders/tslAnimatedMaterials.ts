@@ -33,14 +33,45 @@ const fbm2 = Fn(([p]) => {
   return v;
 });
 
-export type AnimatedMaterialType = 'waterfall' | 'caustic' | 'foam' | 'ripple';
+export type AnimatedMaterialType =
+  | 'waterfall'
+  | 'caustic'
+  | 'foam'
+  | 'ripple'
+  | 'rainbow_scroll'
+  | 'sparkle'
+  | 'lava'
+  | 'galaxy';
+
+export const ANIMATED_MATERIAL_PRESETS: Array<{
+  name: string;
+  type: AnimatedMaterialType;
+  color: number;
+  speed: number;
+  scale: number;
+}> = [
+  { name: 'Waterfall', type: 'waterfall',      color: 0x1d9fd6, speed: 1.0, scale: 4.0 },
+  { name: 'Caustic',   type: 'caustic',        color: 0x1ca8b8, speed: 0.8, scale: 3.0 },
+  { name: 'Foam',      type: 'foam',           color: 0x2488aa, speed: 0.6, scale: 5.0 },
+  { name: 'Ripple',    type: 'ripple',         color: 0x3078a0, speed: 0.7, scale: 4.0 },
+  { name: 'Rainbow',   type: 'rainbow_scroll', color: 0xffffff, speed: 1.0, scale: 3.0 },
+  { name: 'Sparkle',   type: 'sparkle',        color: 0xffd700, speed: 1.2, scale: 4.0 },
+  { name: 'Lava',      type: 'lava',           color: 0xff4500, speed: 0.5, scale: 3.0 },
+  { name: 'Galaxy',    type: 'galaxy',         color: 0x6a0dad, speed: 0.3, scale: 4.0 },
+];
 
 export function createAnimatedStrokeMaterial(
   type: AnimatedMaterialType,
-  baseColor: THREE.Color | any = new THREE.Color(0x1d9fd6)
-): { material: MeshBasicNodeMaterial; uniforms: { uSpeed: any; uScale: any; uColor: any } } {
-  const uSpeed = uniform(1.0);
-  const uScale = uniform(4.0);
+  baseColor: THREE.Color | any = new THREE.Color(0x1d9fd6),
+  strokeAspect: number = 10.0
+): { material: MeshBasicNodeMaterial; uniforms: { uSpeed: any; uScale: any; uColor: any; uAspect: any } } {
+  const preset = ANIMATED_MATERIAL_PRESETS.find(p => p.type === type);
+  const defaultSpeed = preset ? preset.speed : 1.0;
+  const defaultScale = preset ? preset.scale : 4.0;
+
+  const uSpeed = uniform(defaultSpeed);
+  const uScale = uniform(defaultScale);
+  const uAspect = uniform(strokeAspect);
   // Accept either a THREE.Color (creates a uniform) or a TSL node (used directly)
   const uColor = (baseColor && typeof baseColor.isColor === 'boolean') ? uniform(baseColor) : baseColor;
   const time = timerGlobal();
@@ -51,7 +82,7 @@ export function createAnimatedStrokeMaterial(
     material.colorNode = Fn(() => {
       const vUv = uv();
       const t = time.mul(uSpeed);
-      const coord = vec2(vUv.x.mul(uScale), vUv.y.mul(uScale).add(t.mul(0.5)));
+      const coord = vec2(vUv.x.mul(uScale), vUv.y.mul(uAspect).mul(uScale).add(t.mul(0.5)));
 
       const n1 = noise2d(coord.mul(3.0));
       const n2 = noise2d(coord.mul(6.0).add(vec2(0.0, t.mul(0.3))));
@@ -75,7 +106,7 @@ export function createAnimatedStrokeMaterial(
     material.colorNode = Fn(() => {
       const vUv = uv();
       const t = time.mul(uSpeed);
-      const coord = vUv.mul(uScale).mul(2.0).add(vec2(t.mul(0.5), t.mul(0.25)));
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale).mul(2.0).add(vec2(t.mul(0.5), t.mul(0.25)));
 
       const voronoiSmooth = Fn(([p, w, offset]) => {
         const n = floor(p);
@@ -112,7 +143,7 @@ export function createAnimatedStrokeMaterial(
     material.colorNode = Fn(() => {
       const vUv = uv();
       const t = time.mul(uSpeed);
-      const coord = vUv.mul(uScale);
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale);
 
       const n1 = fbm2(coord.sub(vec2(0.0, t.mul(0.3))));
       const n2 = fbm2(coord.add(vec2(0.0, t.mul(0.3))));
@@ -128,12 +159,11 @@ export function createAnimatedStrokeMaterial(
 
       return vec4(col, 1.0);
     })();
-  } else {
-    // ripple
+  } else if (type === 'ripple') {
     material.colorNode = Fn(() => {
       const vUv = uv();
       const t = time.mul(uSpeed);
-      const coord = vUv.mul(uScale);
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale);
 
       const n1 = fbm2(coord.mul(2.0).add(vec2(0.0, t.mul(0.5))));
       const n2 = noise2d(coord.add(vec2(0.0, t.mul(1.2))));
@@ -147,14 +177,92 @@ export function createAnimatedStrokeMaterial(
 
       return vec4(col, 1.0);
     })();
+  } else if (type === 'rainbow_scroll') {
+    material.colorNode = Fn(() => {
+      const vUv = uv();
+      const t = time.mul(uSpeed);
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale);
+
+      const phase = coord.y.add(t.mul(0.4));
+      const r = sin(phase).mul(0.5).add(0.5);
+      const g = sin(phase.add(2.094)).mul(0.5).add(0.5);
+      const b = sin(phase.add(4.189)).mul(0.5).add(0.5);
+      const shimmer = noise2d(coord.mul(8.0).add(vec2(t.mul(0.6), 0.0)));
+      const col = vec3(r, g, b).mul(float(0.85).add(shimmer.mul(0.15)));
+
+      return vec4(col, 1.0);
+    })();
+  } else if (type === 'sparkle') {
+    material.colorNode = Fn(() => {
+      const vUv = uv();
+      const t = time.mul(uSpeed);
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale).mul(3.0);
+
+      const cellId = floor(coord);
+      const cellUv = fract(coord).sub(0.5);
+      const rnd = hash2d(cellId);
+      const twinklePhase = t.mul(3.0).add(rnd.mul(6.2831));
+      const brightness = pow(max(sin(twinklePhase), float(0.0)), float(8.0));
+      const dist = length(cellUv);
+      const star = smoothstep(0.3, 0.0, dist).mul(brightness);
+      const ray1 = smoothstep(0.02, 0.0, abs(cellUv.x)).mul(smoothstep(0.4, 0.0, abs(cellUv.y)));
+      const ray2 = smoothstep(0.02, 0.0, abs(cellUv.y)).mul(smoothstep(0.4, 0.0, abs(cellUv.x)));
+      const rays = ray1.add(ray2).mul(brightness).mul(0.5);
+      const col = mix(uColor, vec3(1.0, 1.0, 1.0), star.add(rays));
+
+      return vec4(col, 1.0);
+    })();
+  } else if (type === 'lava') {
+    material.colorNode = Fn(() => {
+      const vUv = uv();
+      const t = time.mul(uSpeed);
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale);
+
+      const n1 = fbm2(coord.mul(2.0).add(vec2(t.mul(0.15), t.mul(0.1))));
+      const n2 = fbm2(coord.mul(3.0).sub(vec2(t.mul(0.1), t.mul(0.2))));
+      const blend = n1.mul(n2).mul(4.0);
+      const hot = vec3(1.0, 0.9, 0.2);
+      const warm = vec3(1.0, 0.35, 0.05);
+      const dark = vec3(0.15, 0.02, 0.0);
+      let col = mix(dark, warm, smoothstep(0.15, 0.4, blend));
+      col = mix(col, hot, smoothstep(0.5, 0.7, blend));
+      const glow = smoothstep(0.6, 0.8, blend).mul(0.4);
+      col = col.add(vec3(glow, glow.mul(0.5), 0.0));
+
+      return vec4(col, 1.0);
+    })();
+  } else if (type === 'galaxy') {
+    material.colorNode = Fn(() => {
+      const vUv = uv();
+      const t = time.mul(uSpeed);
+      const coord = vec2(vUv.x, vUv.y.mul(uAspect)).mul(uScale);
+
+      const neb1 = fbm2(coord.mul(1.5).add(vec2(t.mul(0.05), t.mul(0.08))));
+      const neb2 = fbm2(coord.mul(2.5).sub(vec2(t.mul(0.06), t.mul(0.04))));
+      const nebula = neb1.add(neb2).mul(0.5);
+
+      const deepSpace = uColor.mul(0.3);
+      const nebulaMid = vec3(0.1, 0.4, 0.9);
+      const nebulaHigh = vec3(0.9, 0.2, 0.6);
+
+      let col = mix(deepSpace, nebulaMid, smoothstep(0.2, 0.6, nebula));
+      col = mix(col, nebulaHigh, smoothstep(0.6, 0.85, nebula));
+
+      const starCoord = coord.mul(6.0);
+      const cellId = floor(starCoord);
+      const cellUv = fract(starCoord).sub(0.5);
+      const rnd = hash2d(cellId);
+      const isStar = step(0.85, rnd);
+      const starPhase = t.mul(2.0).add(rnd.mul(6.2831));
+      const starTwinkle = pow(max(sin(starPhase), float(0.0)), float(16.0));
+      const starDist = length(cellUv);
+      const starPoint = smoothstep(0.2, 0.0, starDist).mul(starTwinkle).mul(isStar);
+
+      col = col.add(vec3(starPoint, starPoint, starPoint));
+
+      return vec4(col, 1.0);
+    })();
   }
 
-  return { material, uniforms: { uSpeed, uScale, uColor } };
+  return { material, uniforms: { uSpeed, uScale, uColor, uAspect } };
 }
-
-export const ANIMATED_MATERIAL_PRESETS: Array<{ name: string; type: AnimatedMaterialType; color: number; speed: number; scale: number }> = [
-  { name: 'Waterfall', type: 'waterfall', color: 0x1d9fd6, speed: 1.0, scale: 4.0 },
-  { name: 'Caustic',   type: 'caustic',   color: 0x1ca8b8, speed: 0.8, scale: 3.0 },
-  { name: 'Foam',      type: 'foam',      color: 0x2488aa, speed: 0.6, scale: 5.0 },
-  { name: 'Ripple',    type: 'ripple',     color: 0x3078a0, speed: 0.7, scale: 4.0 },
-];

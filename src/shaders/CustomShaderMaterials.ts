@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { attribute, uv, float, abs, pow } from 'three/tsl';
+import { attribute, uv, float, abs, pow, mix } from 'three/tsl';
 import { patternColorNode, patternAlphaNode, ExtendedPatternType } from './tslPatterns';
 import { createAnimatedStrokeMaterial, AnimatedMaterialType } from './tslAnimatedMaterials';
 
@@ -25,7 +25,11 @@ export type MaterialType =
   | 'waterfall'
   | 'caustic'
   | 'foam'
-  | 'ripple';
+  | 'ripple'
+  | 'rainbow_scroll'
+  | 'sparkle'
+  | 'lava'
+  | 'galaxy';
 
 export interface MaterialOptions {
   type: MaterialType;
@@ -33,6 +37,9 @@ export interface MaterialOptions {
   glowIntensity?: number;
   patternScale?: number;
   bgColor?: THREE.Color;
+  strokeAspect?: number;
+  animatedOverlay?: AnimatedMaterialType;
+  overlayBlend?: number;
 }
 
 /**
@@ -42,12 +49,33 @@ export interface MaterialOptions {
  * and fold in the brush opacity via `opacityNode`.
  */
 export class CustomShaderMaterials {
+  public static applyAnimatedOverlay(
+    baseMaterial: THREE.Material,
+    overlayType: AnimatedMaterialType,
+    blend: number = 0.5,
+    strokeAspect: number = 10.0
+  ): THREE.Material {
+    const base = baseMaterial as any;
+    if (!base.colorNode) return baseMaterial;
+
+    const baseColor = base.colorNode;
+    const { material: overlayMat, uniforms } = createAnimatedStrokeMaterial(overlayType, baseColor, strokeAspect);
+    uniforms.uAspect.value = strokeAspect;
+
+    const overlayColor = overlayMat.colorNode!;
+    base.colorNode = mix(baseColor, overlayColor, float(blend));
+    return baseMaterial;
+  }
+
   public static createMaterial(options: MaterialOptions): THREE.Material {
     const opacity = options.opacity ?? 1.0;
+    const strokeAspect = options.strokeAspect ?? 10.0;
     // vec4 per-vertex color (rgb + alpha) baked into the stroke geometry.
     const vColor = attribute('color', 'vec4');
     const vRgb = vColor.xyz;
     const vAlpha = vColor.w.mul(opacity);
+
+    let mat: THREE.Material;
 
     switch (options.type) {
       case 'shaded': {
@@ -62,7 +90,8 @@ export class CustomShaderMaterials {
         m.depthTest = true;
         m.alphaTest = 0.005;
         m.side = THREE.DoubleSide;
-        return m;
+        mat = m;
+        break;
       }
 
       case 'cel_shaded': {
@@ -75,7 +104,8 @@ export class CustomShaderMaterials {
         m.depthTest = true;
         m.alphaTest = 0.005;
         m.side = THREE.DoubleSide;
-        return m;
+        mat = m;
+        break;
       }
 
       case 'glow': {
@@ -90,7 +120,8 @@ export class CustomShaderMaterials {
         m.depthTest = true;
         m.alphaTest = 0.005;
         m.side = THREE.DoubleSide;
-        return m;
+        mat = m;
+        break;
       }
 
       case 'cutout': {
@@ -101,7 +132,8 @@ export class CustomShaderMaterials {
         m.depthWrite = true;
         m.depthTest = true;
         m.side = THREE.DoubleSide;
-        return m;
+        mat = m;
+        break;
       }
 
       case 'pencil':
@@ -125,20 +157,27 @@ export class CustomShaderMaterials {
         m.depthTest = true;
         m.alphaTest = 0.005;
         m.side = THREE.DoubleSide;
-        return m;
+        mat = m;
+        break;
       }
 
       case 'waterfall':
       case 'caustic':
       case 'foam':
-      case 'ripple': {
-        const { material } = createAnimatedStrokeMaterial(options.type as AnimatedMaterialType, vRgb);
+      case 'ripple':
+      case 'rainbow_scroll':
+      case 'sparkle':
+      case 'lava':
+      case 'galaxy': {
+        const { material } = createAnimatedStrokeMaterial(options.type as AnimatedMaterialType, vRgb, strokeAspect);
         material.opacityNode = vAlpha;
         material.transparent = true;
         material.depthWrite = true;
         material.depthTest = true;
         material.alphaTest = 0.005;
-        return material;
+        material.side = THREE.DoubleSide;
+        mat = material;
+        break;
       }
 
       case 'shadeless':
@@ -151,8 +190,20 @@ export class CustomShaderMaterials {
         m.depthTest = true;
         m.alphaTest = 0.005;
         m.side = THREE.DoubleSide;
-        return m;
+        mat = m;
+        break;
       }
     }
+
+    if (options.animatedOverlay) {
+      mat = CustomShaderMaterials.applyAnimatedOverlay(
+        mat,
+        options.animatedOverlay,
+        options.overlayBlend ?? 0.5,
+        strokeAspect
+      );
+    }
+
+    return mat;
   }
 }

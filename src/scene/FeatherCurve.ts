@@ -65,13 +65,24 @@ export class FeatherCurve {
     const geometry = this.generateGeometry();
     const material = CustomShaderMaterials.createMaterial({
       type: this.materialType,
-      opacity: this.alpha
+      opacity: this.alpha,
+      strokeAspect: this.computeAspect()
     });
 
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
     this.mesh.userData = { curveId: this.id };
+  }
+
+  public computeAspect(): number {
+    if (this.points.length < 2) return 10.0;
+    let length = 0;
+    for (let i = 1; i < this.points.length; i++) {
+      length += this.points[i].position.distanceTo(this.points[i - 1].position);
+    }
+    const width = this.size || 0.02;
+    return Math.max(length / width, 1.0);
   }
 
   public generateGeometry(): THREE.BufferGeometry {
@@ -99,7 +110,8 @@ export class FeatherCurve {
     }
     this.mesh.material = CustomShaderMaterials.createMaterial({
       type: this.materialType,
-      opacity: this.alpha
+      opacity: this.alpha,
+      strokeAspect: this.computeAspect()
     });
   }
 

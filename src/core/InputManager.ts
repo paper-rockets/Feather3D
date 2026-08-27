@@ -6,6 +6,7 @@ export interface PointerDrawCallbacks {
   onPointerDrawMove: (point: CurvePoint, ndc: THREE.Vector2, e: PointerEvent) => void;
   onPointerDrawEnd: (e: PointerEvent) => void;
   onStylusBarrelButton?: (screenX: number, screenY: number, e: PointerEvent) => void;
+  onStylusButtonToggle?: (isPressed: boolean, screenX: number, screenY: number, e: PointerEvent) => void;
   onStylusHover?: (screenX: number, screenY: number, ndc: THREE.Vector2) => void;
   /** Fired when a stylus/pen goes down (true) or lifts (false) so navigation
    *  gestures can suppress 1-finger orbit while the pen is drawing. */
@@ -18,6 +19,7 @@ export class InputManager {
   private activePointerId: number | null = null;
   public isStylusActive: boolean = false;
   public isFingerPenMode: boolean = false;
+  public isBarrelButtonPressed: boolean = false;
   public minPressure: number = 0.05;
 
   public onFingerPenChange?: (enabled: boolean) => void;
@@ -35,19 +37,25 @@ export class InputManager {
   }
 
   private bindEvents(): void {
-    this.element.addEventListener('pointerdown', this.onPointerDown.bind(this));
-    window.addEventListener('pointermove', this.onPointerMove.bind(this));
-    window.addEventListener('pointerup', this.onPointerUp.bind(this));
-    window.addEventListener('pointercancel', this.onPointerUp.bind(this));
+    if (this.element && this.element.addEventListener) {
+      this.element.addEventListener('pointerdown', this.onPointerDown.bind(this));
+      // Prevent default Android S-Pen / browser right-click context menu
+      this.element.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        return false;
+      });
+      if (this.element.style) {
+        this.element.style.touchAction = 'none';
+      }
+    }
 
-    // Prevent default Android S-Pen / browser right-click context menu
-    this.element.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      return false;
-    });
-
-    this.element.style.touchAction = 'none';
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointermove', this.onPointerMove.bind(this));
+      window.addEventListener('pointerup', this.onPointerUp.bind(this));
+      window.addEventListener('pointercancel', this.onPointerUp.bind(this));
+    }
   }
+
 
   private getNDC(clientX: number, clientY: number): THREE.Vector2 {
     const rect = this.element.getBoundingClientRect();
@@ -79,21 +87,26 @@ export class InputManager {
     };
   }
 
+  private isStylusBarrelButtonEvent(e: PointerEvent): boolean {
+    return e.pointerType === 'pen' && (
+      e.button === 2 ||
+      e.button === 5 ||
+      (e.buttons & 2) !== 0 ||
+      (e.buttons & 32) !== 0
+    );
+  }
+
   private onPointerDown(e: PointerEvent): void {
-    // S-Pen / Stylus barrel button press (button 2 / right click)
-    if (e.pointerType === 'pen' && (e.button === 2 || e.buttons === 2)) {
+    // S-Pen / Stylus barrel button press detection
+    if (this.isStylusBarrelButtonEvent(e)) {
+      this.isBarrelButtonPressed = true;
       if (this.callbacks.onStylusBarrelButton) {
         this.callbacks.onStylusBarrelButton(e.clientX, e.clientY, e);
       }
-      return;
-    }
-
-    // Ignore pointer events initiated on UI overlays
-    const target = e.target as HTMLElement | null;
-    if (target && target !== this.element && !this.element.contains(target)) {
-      return;
-    }
-    if (target && target.closest('#topbar, #tool-dock, #sidebar-dock, #sidebar-panel, #bottom-context-menu, #camera-nav-widget, #plane-nav-widget, #navcube-widget, .modal-overlay, .dropdown-menu, .color-popover-card, .brush-presets-drawer, .brush-slider-popover, .undo-redo-pill, .sidebar-toolcard')) {
+      if (this.callbacks.onStylusButtonToggle) {
+        this.callbacks.onStylusButtonToggle(true, e.clientX, e.clientY, e);
+      }
+      if (e.cancelable) e.preventDefault();
       return;
     }
 
@@ -127,8 +140,22 @@ export class InputManager {
   }
 
   private onPointerMove(e: PointerEvent): void {
+    // Track S-Pen button state transitions during hover or drag
+    if (e.pointerType === 'pen') {
+      const isButtonPressed = (e.buttons & 2) !== 0 || (e.buttons & 32) !== 0;
+      if (isButtonPressed !== this.isBarrelButtonPressed) {
+        this.isBarrelButtonPressed = isButtonPressed;
+        if (this.callbacks.onStylusButtonToggle) {
+          this.callbacks.onStylusButtonToggle(isButtonPressed, e.clientX, e.clientY, e);
+        }
+        if (isButtonPressed && this.callbacks.onStylusBarrelButton) {
+          this.callbacks.onStylusBarrelButton(e.clientX, e.clientY, e);
+        }
+      }
+    }
+
     if (this.activePointerId !== e.pointerId) {
-      // S-Pen / Apple Pencil Hover detection
+      // S-Pen / Stylus Hover detection
       if (e.pointerType === 'pen' && this.callbacks.onStylusHover) {
         const ndc = this.getNDC(e.clientX, e.clientY);
         this.callbacks.onStylusHover(e.clientX, e.clientY, ndc);
@@ -148,8 +175,16 @@ export class InputManager {
   }
 
   private onPointerUp(e: PointerEvent): void {
-    if (e.pointerType === 'pen' && this.callbacks.onPenActiveChange) {
-      this.callbacks.onPenActiveChange(false);
+    if (e.pointerType === 'pen') {
+      if (this.isBarrelButtonPressed) {
+        this.isBarrelButtonPressed = false;
+        if (this.callbacks.onStylusButtonToggle) {
+          this.callbacks.onStylusButtonToggle(false, e.clientX, e.clientY, e);
+        }
+      }
+      if (this.callbacks.onPenActiveChange) {
+        this.callbacks.onPenActiveChange(false);
+      }
     }
 
     if (this.activePointerId === e.pointerId) {
@@ -172,5 +207,7 @@ export class InputManager {
   public cancelCurrentPointer(): void {
     this.activePointerId = null;
     this.isStylusActive = false;
+    this.isBarrelButtonPressed = false;
   }
 }
+

@@ -1,6 +1,9 @@
-import { Engine } from '../core/Engine';
-import { icon } from './icons';
+import { Engine, ToolType } from '../core/Engine';
 
+/**
+ * ContextMenuUI: Bottom-center floating contextual dock for active tool modifiers.
+ * 100% clean plain text with zero emojis or decorative glyphs.
+ */
 export class ContextMenuUI {
   public element: HTMLElement;
   private engine: Engine;
@@ -34,39 +37,40 @@ export class ContextMenuUI {
 
     if (tool === 'draw' || tool === 'inject') {
       const brush = this.engine.brushEngine;
-      const presetName = brush.activePreset?.name || 'Brush';
+      const presetName = brush.activePreset?.name || 'BRUSH';
       const sizeVal = Math.round((brush.size / 2.0) * 1000);
       const opVal = Math.round(brush.opacity * 100);
       const colorHex = `#${brush.color.getHexString()}`;
       const guideMode = this.engine.guideManager.mode;
-      let planeName = 'Floor';
-      if (guideMode === 'primitive') planeName = 'Guide';
-      else if (guideMode === 'mesh') planeName = 'Mesh';
+      let planeName = 'FLOOR';
+      if (guideMode === 'primitive') planeName = 'GUIDE';
+      else if (guideMode === 'mesh') planeName = 'MESH';
       else if (guideMode === 'plane') {
         const n = this.engine.guideManager.planeGuide.normal;
         const tilt = Math.round(Math.acos(Math.min(1, Math.abs(n.y))) * 180 / Math.PI);
-        if (tilt < 5) planeName = 'Floor';
-        else if (Math.abs(n.z) > Math.abs(n.x)) planeName = `Wall ${tilt} deg`;
-        else planeName = `Side ${tilt} deg`;
+        if (tilt < 5) planeName = 'FLOOR';
+        else if (Math.abs(n.z) > Math.abs(n.x)) planeName = `WALL ${tilt} DEG`;
+        else planeName = `SIDE ${tilt} DEG`;
       }
+
 
       this.element.innerHTML = `
         <div class="context-pill status-strip">
-          <div class="status-chip status-chip-btn" id="ctx-brush-name" title="Change Brush">
+          <div class="status-chip status-chip-btn" id="ctx-brush-name" title="Tap to open brush library">
             <span class="status-swatch" style="background:${colorHex};"></span>
-            <span class="status-text">${presetName}</span>
+            <span class="status-text">${presetName.toUpperCase()}</span>
           </div>
           <span class="status-sep"></span>
-          <div class="status-chip" title="Active Plane Orientation">
+          <div class="status-chip">
             <span class="status-text status-plane-label">${planeName}</span>
           </div>
           <span class="status-sep"></span>
-          <div class="status-chip status-chip-btn" id="ctx-size-chip" title="Brush Size">
-            <span class="status-text">Size ${sizeVal}</span>
+          <div class="status-chip status-chip-btn" id="ctx-size-chip" title="Tap to adjust size">
+            <span class="status-text">SIZE ${sizeVal}MM</span>
           </div>
           <span class="status-sep"></span>
-          <div class="status-chip status-chip-btn" id="ctx-op-chip" title="Brush Opacity">
-            <span class="status-text">Op ${opVal}%</span>
+          <div class="status-chip status-chip-btn" id="ctx-op-chip" title="Tap to adjust opacity">
+            <span class="status-text">OP ${opVal}%</span>
           </div>
         </div>
       `;
@@ -74,15 +78,15 @@ export class ContextMenuUI {
       this.element.innerHTML = `
         <div class="ipad-context-card">
           <div class="ipad-ctx-tabs">
-            <button class="ipad-ctx-tab active" id="ctx-tab-xform">Transform</button>
-            <button class="ipad-ctx-tab" id="ctx-tab-liq">Liquify</button>
+            <button class="ipad-ctx-tab active" id="ctx-tab-xform">TRANSFORM</button>
+            <button class="ipad-ctx-tab" id="ctx-tab-liq">LIQUIFY</button>
           </div>
           <div class="ipad-ctx-actions">
-            <button class="ipad-action-btn" id="ctx-snap-btn" title="Snap to Ground">${icon('cubeCenter')}</button>
-            <button class="ipad-action-btn" id="ctx-dup-btn" title="Duplicate">${icon('duplicate')}</button>
-            <button class="ipad-action-btn" id="ctx-mirror-btn" title="Mirror Duplicate">${icon('mirror')}</button>
-            <button class="ipad-action-btn" id="ctx-flip-btn" title="Flip / Invert">${icon('flipHourglass')}</button>
-            <button class="ipad-action-btn btn-danger-action" id="ctx-delete-btn" title="Delete">${icon('trash')}</button>
+            <button class="ipad-action-btn" id="ctx-snap-btn">SNAP</button>
+            <button class="ipad-action-btn" id="ctx-dup-btn">DUPLICATE</button>
+            <button class="ipad-action-btn" id="ctx-mirror-btn">MIRROR</button>
+            <button class="ipad-action-btn" id="ctx-flip-btn">FLIP</button>
+            <button class="ipad-action-btn btn-danger-action" id="ctx-delete-btn">DELETE</button>
           </div>
         </div>
       `;
@@ -90,22 +94,22 @@ export class ContextMenuUI {
       this.element.innerHTML = `
         <div class="ipad-context-card">
           <div class="ipad-ctx-tabs">
-            <button class="ipad-ctx-tab" id="ctx-tab-xform">Transform</button>
-            <button class="ipad-ctx-tab active" id="ctx-tab-liq">Liquify</button>
+            <button class="ipad-ctx-tab" id="ctx-tab-xform">TRANSFORM</button>
+            <button class="ipad-ctx-tab active" id="ctx-tab-liq">LIQUIFY</button>
           </div>
           <div class="ipad-ctx-actions">
-            <button class="ipad-action-btn" id="ctx-reset-liq" title="Reset Liquify">${icon('reset')}</button>
-            <button class="ipad-action-btn" id="ctx-flip-liq" title="Flip">${icon('flipHourglass')}</button>
-            <button class="ipad-action-btn" id="ctx-apply-liq" title="Apply">${icon('check')}</button>
-            <button class="ipad-action-btn btn-danger-action" id="ctx-delete-btn" title="Delete">${icon('trash')}</button>
+            <button class="ipad-action-btn" id="ctx-reset-liq">RESET</button>
+            <button class="ipad-action-btn" id="ctx-flip-liq">FLIP</button>
+            <button class="ipad-action-btn" id="ctx-apply-liq">APPLY</button>
+            <button class="ipad-action-btn btn-danger-action" id="ctx-delete-btn">DELETE</button>
           </div>
         </div>
       `;
     } else if (tool === 'loft') {
       this.element.innerHTML = `
         <div class="context-pill">
-          <span style="font-size: 10px; font-weight: 700; white-space: nowrap;">LOFT TENSION</span>
-          <input id="ctx-loft-tension" type="range" min="0" max="100" value="50" style="width: 90px;">
+          <span style="font-size: 10px; font-weight: 700; white-space: nowrap; letter-spacing: 0.05em;">LOFT TENSION</span>
+          <input id="ctx-loft-tension" type="range" min="0" max="100" value="50" class="prop-range-slider" style="width: 90px;">
           <button id="ctx-loft-apply" class="btn btn-sm active">BRIDGE</button>
           <button id="ctx-loft-cancel" class="btn btn-sm">CANCEL</button>
         </div>
@@ -115,9 +119,9 @@ export class ContextMenuUI {
       this.element.innerHTML = `
         <div class="context-pill">
           <button id="ctx-erase-mode" class="btn btn-sm active">${mode === 'vacuum' ? 'VACUUM' : 'POINT'}</button>
-          <div style="display: flex; align-items: center; gap: 4px; padding: 0 4px;">
-            <span style="font-size: 9px; font-weight: 700; color: var(--mut);">RADIUS</span>
-            <input id="ctx-erase-radius" type="range" min="2" max="50" value="10" style="width: 60px;">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 0 4px;">
+            <span style="font-size: 9px; font-weight: 700; color: var(--mut); letter-spacing: 0.05em;">RADIUS</span>
+            <input id="ctx-erase-radius" type="range" min="2" max="50" value="10" class="prop-range-slider" style="width: 60px;">
           </div>
         </div>
       `;
@@ -180,6 +184,14 @@ export class ContextMenuUI {
 
       this.element.querySelector('#ctx-apply-liq')?.addEventListener('click', () => {
         this.engine.setTool('select');
+      });
+
+      this.element.querySelector('#ctx-reset-liq')?.addEventListener('click', () => {
+        this.engine.selectionTool.clearSelection();
+      });
+
+      this.element.querySelector('#ctx-flip-liq')?.addEventListener('click', () => {
+        this.engine.selectionTool.duplicateSymmetric('mirror');
       });
 
       this.element.querySelector('#ctx-delete-btn')?.addEventListener('click', () => {

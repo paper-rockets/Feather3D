@@ -14,6 +14,7 @@ import { EraserTool } from '../brushes/EraserTool';
 import { InjectorTool } from '../brushes/InjectorTool';
 import { LiquifyTool } from '../brushes/LiquifyTool';
 import { SelectionTool } from '../tools/SelectionTool';
+import { DrawShapeTool } from '../tools/DrawShapeTool';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { SqueezeMenuController } from './SqueezeMenuController';
 import { ShapeRecognition } from '../math/ShapeRecognition';
@@ -29,7 +30,8 @@ import { GLTFImportService } from '../io/GLTFImportService';
 import { AirbreathEngine, AestheticPreset } from '../rendering/AirbreathEngine';
 import { NatureSceneBuilder, NatureSceneOptions } from '../scene/NatureSceneBuilder';
 
-export type ToolType = 'draw' | 'erase' | 'select' | 'loft' | 'liquify' | 'inject' | 'transform' | 'navigate';
+export type ToolType = 'draw' | 'draw_shape' | 'erase' | 'select' | 'loft' | 'liquify' | 'inject' | 'transform' | 'navigate';
+
 
 export class AddCurveCommand implements ICommand {
   private stageManager: StageManager;
@@ -103,6 +105,7 @@ export class Engine {
   public injectorTool: InjectorTool;
   public liquifyTool: LiquifyTool;
   public selectionTool: SelectionTool;
+  public drawShapeTool: DrawShapeTool;
   public keyboardShortcuts: KeyboardShortcuts;
   public squeezeMenu: SqueezeMenuController;
   public inputManager: InputManager;
@@ -120,13 +123,23 @@ export class Engine {
   private lastDragPoint3D: THREE.Vector3 | null = null;
   private lastPointerScreenPos: { x: number; y: number } = { x: 0, y: 0 };
   private lassoScreenPts: Array<{ x: number; y: number }> = [];
+  private shapeHoldTimer: number | null = null;
 
   public onToolChange?: (tool: ToolType) => void;
   public onCurveCreated?: (curve: FeatherCurve) => void;
-  public onStrokeStart?: () => void;
   public onToggleHideUI?: () => void;
   public onFingerPenChange?: (enabled: boolean) => void;
   public onOpenTutorial?: (tab?: any) => void;
+  public onCursorFeedback?: (data: {
+    type: 'touch' | 'pen' | 'hover';
+    screenX: number;
+    screenY: number;
+    isDown: boolean;
+    colorHex?: string;
+    radiusPx?: number;
+    worldPos?: THREE.Vector3;
+  }) => void;
+  public onCursorHoverEnd?: () => void;
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
@@ -140,6 +153,7 @@ export class Engine {
     this.symmetryManager = new SymmetryManager();
     this.joystickController = new JoystickController();
     this.selectionTool = new SelectionTool(this.stageManager, this.historyManager);
+    this.drawShapeTool = new DrawShapeTool();
 
     this.airbreath = new AirbreathEngine(
       this.viewport.renderer,
@@ -147,16 +161,12 @@ export class Engine {
       this.viewport.camera
     );
 
-    // WEBGPU-MIGRATION: PostProcessingPipeline built a WebGL EffectComposer in
-    // its constructor (GPU work incompatible with WebGPURenderer) and was never
-    // used in the render loop — AirbreathEngine owns rendering. Construction is
-    // removed; the post-processing agent replaces it with node-based effects.
-
     this.eraserTool = new EraserTool(this.stageManager, this.historyManager);
     this.injectorTool = new InjectorTool(this.stageManager, this.brushEngine);
     this.liquifyTool = new LiquifyTool(this.stageManager, this.historyManager);
     this.keyboardShortcuts = new KeyboardShortcuts(this);
     this.squeezeMenu = new SqueezeMenuController(this);
+
 
     // Assemble scene graph
     this.scene.background = new THREE.Color(this.environment.config.bgColor);
@@ -189,6 +199,18 @@ export class Engine {
         if (this.activeTool === 'inject') {
           // Update loupe position while hovering
         }
+        const snap = this.guideManager.snap(ndc, this.viewport.activeCamera);
+        if (this.onCursorFeedback) {
+          this.onCursorFeedback({
+            type: 'hover',
+            screenX: sx,
+            screenY: sy,
+            isDown: false,
+            colorHex: '#' + this.brushEngine.color.getHexString(),
+            radiusPx: Math.max(8, this.brushEngine.size * 300),
+            worldPos: snap ? snap.point : undefined
+          });
+        }
       },
       onPenActiveChange: (active) => {
         // While the stylus is drawing, suppress 1-finger orbit so a resting
@@ -213,11 +235,16 @@ export class Engine {
       },
       onThreeFingerTap: () => this.historyManager.undo(),
       onThreeFingerDoubleTap: () => this.viewport.toggleProjection(),
+      onThreeFingerSwipeVertical: (deltaY) => {
+        // Continuous FOV zoom distortion (10mm to 500mm focal length)
+        const currentFocal = this.viewport.focalLengthMm;
+        const sensitivity = 0.4;
+        this.viewport.setFocalLengthMm(currentFocal - deltaY * sensitivity);
+      },
       onThreeFingerSwipe: (dir, delta) => {
         if (dir === 'up' || dir === 'down') {
-          // Adjust FOV lens
           const currentFocal = this.viewport.focalLengthMm;
-          const deltaMm = dir === 'up' ? -2 : 2;
+          const deltaMm = dir === 'up' ? 2 : -2;
           this.viewport.setFocalLengthMm(currentFocal + deltaMm);
         } else if (dir === 'right') {
           this.historyManager.redo();
@@ -240,6 +267,7 @@ export class Engine {
         this.cancelDrawing();
       }
     });
+
 
     this.inputManager.onFingerPenChange = (enabled) => {
       this.touchGestures.setFingerPenMode(enabled);
@@ -280,11 +308,21 @@ export class Engine {
   }
 
   public cancelDrawing(): void {
+    this.clearShapeHoldTimer();
+    this.drawShapeTool.cancel();
     this.isDrawing = false;
     this.removeLiveStrokeMeshes();
     this.currentRawPoints = [];
     this.inputManager.cancelCurrentPointer();
   }
+
+  private clearShapeHoldTimer(): void {
+    if (this.shapeHoldTimer !== null) {
+      clearTimeout(this.shapeHoldTimer);
+      this.shapeHoldTimer = null;
+    }
+  }
+
 
   public deleteSelectedCurves(): void {
     if (this.selectionTool.selectedCurves.length === 0) return;
@@ -315,8 +353,15 @@ export class Engine {
   private handlePointerStart(pt: CurvePoint, ndc: THREE.Vector2, e: PointerEvent): void {
     this.lastPointerScreenPos = { x: e.clientX, y: e.clientY };
 
-    if (this.onStrokeStart) {
-      this.onStrokeStart();
+    if (this.onCursorFeedback) {
+      this.onCursorFeedback({
+        type: e.pointerType === 'pen' ? 'pen' : 'touch',
+        screenX: e.clientX,
+        screenY: e.clientY,
+        isDown: true,
+        colorHex: '#' + this.brushEngine.color.getHexString(),
+        radiusPx: Math.max(6, (this.brushEngine.size * 300) * (pt.pressure || 0.5))
+      });
     }
 
     if (this.activeTool === 'navigate') {
@@ -352,11 +397,12 @@ export class Engine {
       return;
     }
 
-    if (this.activeTool === 'draw') {
+    if (this.activeTool === 'draw' || this.activeTool === 'draw_shape') {
       const snap = this.guideManager.snap(ndc, this.viewport.activeCamera);
       if (!snap) return;
 
       this.isDrawing = true;
+      this.clearShapeHoldTimer();
 
       const worldPt: CurvePoint = {
         position: snap.point.clone(),
@@ -367,10 +413,36 @@ export class Engine {
 
       this.currentRawPoints = [worldPt];
       this.createLiveStrokeMeshes();
+
+      if (this.activeTool === 'draw_shape' || this.shapeAssistEnabled) {
+        this.drawShapeTool.startStroke(pt, snap.point);
+        this.shapeHoldTimer = window.setTimeout(() => {
+          if (this.isDrawing && this.currentRawPoints.length >= 3) {
+            const lastPos = this.currentRawPoints[this.currentRawPoints.length - 1].position;
+            const fitted = this.drawShapeTool.triggerHold(lastPos);
+            if (fitted && fitted.length > 0) {
+              this.currentRawPoints = fitted;
+              this.updateLiveStrokeMeshes();
+              this.squeezeMenu.triggerHaptic('light');
+            }
+          }
+        }, 320);
+      }
     }
   }
 
   private handlePointerMove(pt: CurvePoint, ndc: THREE.Vector2, e: PointerEvent): void {
+    if (this.onCursorFeedback && (this.isDrawing || this.activeTool === 'draw' || this.activeTool === 'draw_shape')) {
+      this.onCursorFeedback({
+        type: e.pointerType === 'pen' ? 'pen' : 'touch',
+        screenX: e.clientX,
+        screenY: e.clientY,
+        isDown: true,
+        colorHex: '#' + this.brushEngine.color.getHexString(),
+        radiusPx: Math.max(6, (this.brushEngine.size * 300) * (pt.pressure || 0.5))
+      });
+    }
+
     if (this.activeTool === 'navigate') {
       const dx = e.clientX - this.lastPointerScreenPos.x;
       const dy = e.clientY - this.lastPointerScreenPos.y;
@@ -400,9 +472,18 @@ export class Engine {
       return;
     }
 
-    if (this.activeTool === 'draw' && this.isDrawing) {
+    if ((this.activeTool === 'draw' || this.activeTool === 'draw_shape') && this.isDrawing) {
       const snap = this.guideManager.snap(ndc, this.viewport.activeCamera);
       if (!snap) return;
+
+      if (this.drawShapeTool.isHoldActive) {
+        const adjusted = this.drawShapeTool.updateHoldDrag(snap.point);
+        if (adjusted && adjusted.length > 0) {
+          this.currentRawPoints = adjusted;
+          this.updateLiveStrokeMeshes();
+        }
+        return;
+      }
 
       const prev = this.currentRawPoints[this.currentRawPoints.length - 1];
       const smoothedPos = CurveMath.smoothEMA(
@@ -420,11 +501,38 @@ export class Engine {
         };
         this.currentRawPoints.push(newPt);
         this.updateLiveStrokeMeshes();
+
+        if (this.activeTool === 'draw_shape' || this.shapeAssistEnabled) {
+          this.drawShapeTool.addPoint(pt, smoothedPos);
+          this.clearShapeHoldTimer();
+          this.shapeHoldTimer = window.setTimeout(() => {
+            if (this.isDrawing && this.currentRawPoints.length >= 3) {
+              const lastPos = this.currentRawPoints[this.currentRawPoints.length - 1].position;
+              const fitted = this.drawShapeTool.triggerHold(lastPos);
+              if (fitted && fitted.length > 0) {
+                this.currentRawPoints = fitted;
+                this.updateLiveStrokeMeshes();
+                this.squeezeMenu.triggerHaptic('light');
+              }
+            }
+          }, 320);
+        }
       }
     }
   }
 
   private handlePointerEnd(e: PointerEvent): void {
+    this.clearShapeHoldTimer();
+
+    if (this.onCursorFeedback) {
+      this.onCursorFeedback({
+        type: e.pointerType === 'pen' ? 'pen' : 'touch',
+        screenX: e.clientX,
+        screenY: e.clientY,
+        isDown: false
+      });
+    }
+
     if (this.activeTool === 'select') {
       if (this.lassoScreenPts.length > 5) {
         this.selectionTool.selectByLasso(
@@ -444,18 +552,26 @@ export class Engine {
       return;
     }
 
-    if (this.activeTool === 'draw' && this.isDrawing) {
+    if ((this.activeTool === 'draw' || this.activeTool === 'draw_shape') && this.isDrawing) {
       this.isDrawing = false;
 
       if (this.currentRawPoints.length >= 2) {
         let finalPoints = CurveMath.resampleCurve(this.currentRawPoints, 4);
 
-        // Shape Auto-Completion
-        if (this.shapeAssistEnabled) {
-          const rec = ShapeRecognition.recognizeAndRegularize(finalPoints);
-          if (rec.type !== 'none' && rec.points.length > 1) {
-            finalPoints = rec.points;
+        // Shape Auto-Completion and hold-and-drag committed shape
+        if (this.drawShapeTool.isHoldActive) {
+          const committed = this.drawShapeTool.commitShape();
+          if (committed && committed.length >= 2) {
+            finalPoints = committed;
           }
+        } else if (this.activeTool === 'draw_shape' || this.shapeAssistEnabled) {
+          const shapeData = DrawShapeTool.recognizeAndFit(finalPoints);
+          if (shapeData.type !== 'none' && shapeData.points.length >= 2) {
+            finalPoints = shapeData.points;
+          }
+          this.drawShapeTool.cancel();
+        } else {
+          this.drawShapeTool.cancel();
         }
 
         const curve = new FeatherCurve(
@@ -499,6 +615,7 @@ export class Engine {
       this.currentRawPoints = [];
     }
   }
+
 
   private createLiveStrokeMeshes(): void {
     const geo = new THREE.BufferGeometry();
@@ -731,6 +848,8 @@ export class Engine {
     this.stageManager.clear();
     this.historyManager.clear();
     this.selectionTool.clearSelection();
+    this.guideManager.clearMeshGuides();
+    this.guideManager.setMode('plane');
     this.environment.removeSky(this.scene);
     const isDark = document.body.classList.contains('dark-mode');
     this.environment.setBgColor(isDark ? '#1a1a2e' : '#dcd7ec', this.scene);
@@ -738,6 +857,15 @@ export class Engine {
     this.airbreath.applyPreset('cel_shaded');
     this.airbreath.setShadowsEnabled(true);
     this.viewport.setViewPreset('iso');
+  }
+
+  public loadCanvasTemplate(templateId: string): THREE.Group | null {
+    this.newSketch();
+    const guide = this.guideManager.loadTemplateGuide(templateId);
+    if (!guide) return null;
+    this.activeTool = 'draw';
+    if (this.onToolChange) this.onToolChange('draw');
+    return guide.group;
   }
 
   private startRenderLoop(): void {
@@ -748,7 +876,7 @@ export class Engine {
     const clock = new THREE.Clock();
     // WEBGPU-MIGRATION: renderAsync MUST be awaited before scheduling the next
     // frame. Firing it every requestAnimationFrame without awaiting overlaps
-    // async GPU submissions so no draw ever completes — only the clear color is
+    // async GPU submissions so no draw ever completes -- only the clear color is
     // presented. Await the frame, then schedule the next.
     const animate = async () => {
       const delta = clock.getDelta();

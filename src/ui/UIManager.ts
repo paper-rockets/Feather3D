@@ -178,6 +178,10 @@ export class UIManager {
       this.exportModal.show();
     };
 
+    this.topNav.onNavigatorToggle = () => {
+      this.cameraNavWidget.toggleCollapse();
+    };
+
     this.topNav.onHideUIToggle = () => {
       this.closeAllPopovers();
       this.toggleHideUI();
@@ -202,6 +206,10 @@ export class UIManager {
     this.engine.onToggleHideUI = () => {
       this.closeAllPopovers();
       this.toggleHideUI();
+    };
+
+    this.engine.onToggleNavigator = () => {
+      this.cameraNavWidget.toggleCollapse();
     };
 
     this.contextMenu.onBrushNameClick = () => {

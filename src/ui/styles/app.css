@@ -1680,23 +1680,24 @@ body.dark-mode .cnav-haptic-btn.active {
 /* Pull Tab Handle */
 .navw-tab {
   margin-top: 4px;
-  padding: 3px 14px;
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 5px 14px;
+  border-radius: 0px;
   border: 1px solid var(--bdr);
-  border-top: none;
   background: var(--pan);
-  color: var(--mut);
+  color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
   cursor: pointer;
   transition: all 0.14s ease;
+  box-shadow: var(--shadow);
 }
 
 .navw-tab:hover {
-  background: var(--btn-subtle-hover);
-  color: var(--ink);
+  background: var(--active);
+  color: #ffffff;
+  border-color: var(--active-bdr);
 }
 
 .cnav-tab-label {
@@ -2126,4 +2127,212 @@ body.left-handed #stage-panel {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+/* ========================================================
+   NAVIGATOR CARD TOPBAR & COLLAPSE STYLING
+   ======================================================== */
+.cnav-widget-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 2px 4px 2px;
+  border-bottom: 1px solid var(--bdr);
+  box-sizing: border-box;
+}
+
+.cnav-widget-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--mut);
+}
+
+.cnav-card-hide-btn {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border: 1px solid var(--bdr);
+  background: var(--btn-subtle);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 0px;
+  transition: all 0.12s ease;
+}
+
+.cnav-card-hide-btn:hover {
+  background: var(--active);
+  color: #ffffff;
+  border-color: var(--active-bdr);
+}
+
+/* ========================================================
+   RESPONSIVE CELLPHONE / MOBILE UI (<= 768px)
+   Rearranged menu, non-colliding tool dock, collapsible nav
+   ======================================================== */
+@media (max-width: 768px) {
+  /* 1. Top System Bar: Compact at top-left */
+  #topbar {
+    top: 6px;
+    left: 6px;
+    z-index: 120;
+  }
+
+  .system-menu-quadrant {
+    padding: 3px 5px;
+    gap: 3px;
+  }
+
+  .sys-nav-btn {
+    padding: 5px 8px;
+    font-size: 9.5px;
+    height: 28px;
+  }
+
+  /* 2. Rearranged Tool Dock: Full-width scrollable toolbar row below topbar */
+  #tool-dock {
+    top: 42px;
+    left: 6px;
+    right: 6px;
+    width: auto;
+    max-width: calc(100vw - 12px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    padding: 3px 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    z-index: 115;
+    box-sizing: border-box;
+  }
+
+  #tool-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .td-btn {
+    height: 28px;
+    padding: 0 9px;
+    font-size: 9.5px;
+    flex-shrink: 0;
+  }
+
+  .td-sep {
+    height: 16px;
+    margin: 0 1px;
+    flex-shrink: 0;
+  }
+
+  /* 3. Left Sidebar Brush Panel: Ergonomic mobile compact rail */
+  #sidebar-panel.brush-vertical-pill {
+    left: 6px;
+    top: calc(50% + 20px);
+    width: 44px;
+    padding: 6px 4px;
+    gap: 6px;
+  }
+
+  .pill-brush-thumb {
+    width: 34px;
+    height: 28px;
+  }
+
+  .pill-swatch-circle,
+  .pill-value-circle,
+  .pill-opacity-circle,
+  .pill-round-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .pill-capsule-btn {
+    width: 34px;
+    height: 28px;
+  }
+
+  /* Undo/Redo dock on mobile */
+  .undo-redo-pill {
+    left: 6px;
+    top: calc(50% + 175px);
+    width: 44px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .undo-redo-btn {
+    width: 34px;
+    height: 26px;
+    font-size: 8.5px;
+  }
+
+  /* 4. 3D Navigator on Mobile: Boxy compact, high z-index, responsive card */
+  #camera-nav-widget {
+    bottom: 8px;
+    right: 8px;
+    z-index: 130;
+  }
+
+  .navw-body {
+    width: min(290px, calc(100vw - 16px));
+    max-height: min(460px, 72vh);
+    padding: 8px 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  .navw-tab {
+    padding: 7px 16px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    background: var(--pan-solid);
+    border: 1px solid var(--bdr);
+    box-shadow: var(--shadow);
+  }
+
+  /* 5. Bottom Status Bar on Mobile: Responsive width & touch scrolling */
+  #bottom-context-menu.bottom-context-dock {
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 80px);
+    z-index: 100;
+  }
+
+  .context-pill {
+    padding: 4px 8px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .context-pill::-webkit-scrollbar {
+    display: none;
+  }
+
+  .status-chip {
+    font-size: 9px;
+    padding: 2px 4px;
+    white-space: nowrap;
+  }
+
+  /* 6. Brush Presets Drawer on Mobile */
+  .brush-presets-drawer {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100vw;
+    height: 80vh;
+    border-radius: 0px;
+  }
+
+  /* 7. Dropdown Menu on Mobile: fit to screen */
+  .dropdown-menu {
+    max-width: calc(100vw - 16px);
+  }
 }

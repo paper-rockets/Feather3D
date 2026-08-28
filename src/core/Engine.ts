@@ -128,6 +128,7 @@ export class Engine {
   public onToolChange?: (tool: ToolType) => void;
   public onCurveCreated?: (curve: FeatherCurve) => void;
   public onToggleHideUI?: () => void;
+  public onToggleNavigator?: () => void;
   public onFingerPenChange?: (enabled: boolean) => void;
   public onOpenTutorial?: (tab?: any) => void;
   public onCursorFeedback?: (data: {

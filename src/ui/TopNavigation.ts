@@ -17,6 +17,7 @@ export class TopNavigation {
   public onClipboardToggle?: () => void;
   public onHideUIToggle?: () => void;
   public onGuideTutorialClick?: () => void;
+  public onNavigatorToggle?: () => void;
 
   constructor(engine: Engine) {
     this.engine = engine;
@@ -33,6 +34,7 @@ export class TopNavigation {
       <div class="topbar-group system-menu-quadrant">
         <button id="btn-home" class="sys-nav-btn" title="Dashboard / Projects">PROJECTS</button>
         <button id="btn-menu" class="sys-nav-btn" title="System Menu">MENU</button>
+        <button id="btn-top-nav-toggle" class="sys-nav-btn" title="Toggle 3D Navigator">NAV</button>
         <div id="main-menu-dropdown" class="dropdown-menu">
           <div class="dropdown-group-label">FILE</div>
           <button id="btn-new-sketch" class="dropdown-item">New Sketch</button>
@@ -42,6 +44,7 @@ export class TopNavigation {
           <div class="dropdown-separator"></div>
           <div class="dropdown-group-label">VIEW</div>
           <button id="btn-reset-cam" class="dropdown-item">Reset Camera</button>
+          <button id="btn-toggle-nav" class="dropdown-item">Toggle Navigator <span class="dropdown-shortcut">N</span></button>
           <button id="btn-toggle-ortho" class="dropdown-item">Projection: ${this.engine.viewport.isOrthographic ? 'Ortho' : 'Persp'}</button>
           <button id="btn-hide-ui" class="dropdown-item">Hide UI <span class="dropdown-shortcut">U</span></button>
           <button id="btn-snap-ground" class="dropdown-item">Snap to Ground</button>
@@ -71,6 +74,14 @@ export class TopNavigation {
     // Home / Projects Dashboard
     this.element.querySelector('#btn-home')?.addEventListener('click', () => {
       if (this.onProjectsClick) this.onProjectsClick();
+    });
+
+    this.element.querySelector('#btn-top-nav-toggle')?.addEventListener('click', () => {
+      if (this.onNavigatorToggle) this.onNavigatorToggle();
+    });
+
+    this.element.querySelector('#btn-toggle-nav')?.addEventListener('click', () => {
+      if (this.onNavigatorToggle) this.onNavigatorToggle();
     });
 
     this.element.querySelector('#btn-projects')?.addEventListener('click', () => {

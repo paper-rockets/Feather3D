@@ -72,6 +72,14 @@ export class KeyboardShortcuts {
           return;
         }
 
+        // N: Toggle Navigator Widget
+        if (e.key === 'n' || e.key === 'N') {
+          if (this.engine.onToggleNavigator) {
+            this.engine.onToggleNavigator();
+          }
+          return;
+        }
+
         // H or ?: Open Tutorial & Guide
         if (e.key === 'h' || e.key === 'H' || e.key === '?') {
           if (this.engine.onOpenTutorial) {

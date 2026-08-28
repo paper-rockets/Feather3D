@@ -65,11 +65,20 @@ export class CameraNavWidgetUI {
     this.render();
     this.bindEvents();
     this.syncFromPlaneGuide();
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      this.setCollapsed(true);
+    }
   }
 
   private render(): void {
     this.element.innerHTML = `
       <div class="navw-body" id="cnav-body">
+        <!-- Top Title Bar with Instant Hide Button -->
+        <div class="cnav-widget-topbar">
+          <span class="cnav-widget-title">NAVIGATOR</span>
+          <button id="cnav-hide-card-btn" class="cnav-card-hide-btn" title="Hide Navigator">HIDE</button>
+        </div>
+
         <!-- Unified 4-Mode Tab Row -->
         <div class="cnav-mode-tabs" role="tablist">
           <button class="cnav-tab-btn active" data-mode="orbit">Orbit</button>
@@ -263,6 +272,24 @@ export class CameraNavWidgetUI {
     this.triggerHaptic(15);
   }
 
+  public get isCardCollapsed(): boolean {
+    return this.isCollapsed;
+  }
+
+  public setCollapsed(collapsed: boolean): void {
+    this.isCollapsed = collapsed;
+    this.bodyEl.classList.toggle('navw-collapsed', this.isCollapsed);
+    this.tabEl.classList.toggle('navw-tab-flipped', this.isCollapsed);
+    const label = this.tabEl.querySelector('.cnav-tab-label');
+    if (label) {
+      label.textContent = this.isCollapsed ? 'NAV: OPEN' : 'NAV';
+    }
+  }
+
+  public toggleCollapse(): void {
+    this.setCollapsed(!this.isCollapsed);
+  }
+
   public getMode(): CameraNavMode {
     return this.currentMode;
   }
@@ -270,12 +297,16 @@ export class CameraNavWidgetUI {
   private bindEvents(): void {
     const vp = this.engine.viewport;
 
+    // Instant Hide button in topbar
+    this.element.querySelector('#cnav-hide-card-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.setCollapsed(true);
+    });
+
     // Pull tab collapse/expand
     this.tabEl.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.isCollapsed = !this.isCollapsed;
-      this.bodyEl.classList.toggle('navw-collapsed', this.isCollapsed);
-      this.tabEl.classList.toggle('navw-tab-flipped', this.isCollapsed);
+      this.toggleCollapse();
     });
 
     // Mode tabs
